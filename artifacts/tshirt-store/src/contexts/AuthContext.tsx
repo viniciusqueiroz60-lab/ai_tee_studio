@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { onAuth, getIdToken, type User } from "@/lib/firebase";
-import { apiJson, SESSION_KEY } from "@/lib/api";
+import { SESSION_KEY } from "@/lib/api";
+
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 interface AuthContextValue {
   user: User | null;
@@ -29,8 +31,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIdToken(token);
     if (token) {
       try {
-        const me = await apiJson<{ tokenBalance: number }>("/me");
-        setTokenBalance(me.tokenBalance);
+        const res = await fetch(`${BASE}/api/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setTokenBalance(data.tokenBalance);
+        }
       } catch {
         setTokenBalance(null);
       }
@@ -43,31 +50,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (firebaseUser) {
         const token = await firebaseUser.getIdToken();
         setIdToken(token);
-        // Migrate guest session on login
         const sessionId = localStorage.getItem(SESSION_KEY);
         try {
-          const me = await fetch(
-            `${import.meta.env.BASE_URL.replace(/\/$/, "")}/api/me`,
-            {
-              headers: { Authorization: `Bearer ${token}` },
-            }
-          );
-          if (me.ok) {
-            const data = await me.json();
+          const res = await fetch(`${BASE}/api/me`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (res.ok) {
+            const data = await res.json();
             setTokenBalance(data.tokenBalance);
           }
           if (sessionId) {
-            await fetch(
-              `${import.meta.env.BASE_URL.replace(/\/$/, "")}/api/me/migrate-session`,
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({ sessionId }),
-              }
-            );
+            await fetch(`${BASE}/api/me/migrate-session`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({ sessionId }),
+            });
           }
         } catch {}
       } else {
