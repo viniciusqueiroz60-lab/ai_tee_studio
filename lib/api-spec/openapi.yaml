@@ -845,6 +845,9 @@ components:
           type: boolean
         authorName:
           type: ["string", "null"]
+        userLiked:
+          type: boolean
+          description: Whether the currently authenticated user has liked this artwork (false for unauthenticated)
         createdAt:
           type: string
       required:
@@ -855,6 +858,7 @@ components:
         - likes
         - views
         - upscaled
+        - userLiked
         - createdAt
 
     GenerateArtworkRequest:

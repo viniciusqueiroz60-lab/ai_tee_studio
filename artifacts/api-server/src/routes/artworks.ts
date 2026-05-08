@@ -8,7 +8,7 @@ import { GenerateArtworkBody, RefineArtworkBody } from "@workspace/api-zod";
 
 const router: IRouter = Router();
 
-function formatArtwork(artwork: Artwork, authorName?: string | null) {
+function formatArtwork(artwork: Artwork, authorName?: string | null, userLiked?: boolean) {
   return {
     id: artwork.id,
     userId: artwork.userId,
@@ -24,6 +24,7 @@ function formatArtwork(artwork: Artwork, authorName?: string | null) {
     views: artwork.views,
     upscaled: artwork.upscaled,
     authorName: authorName ?? null,
+    userLiked: userLiked ?? false,
     createdAt: artwork.createdAt instanceof Date ? artwork.createdAt.toISOString() : artwork.createdAt,
   };
 }
@@ -207,7 +208,17 @@ router.get("/artworks/:artworkId", optionalAuth, async (req: AuthenticatedReques
     authorName = user?.displayName ?? null;
   }
 
-  res.json(formatArtwork({ ...artwork, views: artwork.views + 1 }, authorName));
+  // Hydrate per-user like status so the frontend can initialize UI correctly
+  let userLiked = false;
+  if (req.user) {
+    const [like] = await db
+      .select({ artworkId: artworkLikesTable.artworkId })
+      .from(artworkLikesTable)
+      .where(and(eq(artworkLikesTable.userId, req.user.id), eq(artworkLikesTable.artworkId, id)));
+    userLiked = like != null;
+  }
+
+  res.json(formatArtwork({ ...artwork, views: artwork.views + 1 }, authorName, userLiked));
 });
 
 router.post("/artworks/:artworkId/share", optionalAuth, requireAuth, async (req: AuthenticatedRequest, res): Promise<void> => {

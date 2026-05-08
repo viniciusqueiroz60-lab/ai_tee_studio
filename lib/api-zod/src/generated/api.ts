@@ -74,6 +74,11 @@ export const GetMyArtworksResponseItem = zod.object({
   views: zod.number(),
   upscaled: zod.boolean(),
   authorName: zod.string().nullish(),
+  userLiked: zod
+    .boolean()
+    .describe(
+      "Whether the currently authenticated user has liked this artwork (false for unauthenticated)",
+    ),
   createdAt: zod.string(),
 });
 export const GetMyArtworksResponse = zod.array(GetMyArtworksResponseItem);
@@ -112,6 +117,11 @@ export const RefineArtworkResponse = zod.object({
   views: zod.number(),
   upscaled: zod.boolean(),
   authorName: zod.string().nullish(),
+  userLiked: zod
+    .boolean()
+    .describe(
+      "Whether the currently authenticated user has liked this artwork (false for unauthenticated)",
+    ),
   createdAt: zod.string(),
 });
 
@@ -139,6 +149,11 @@ export const GetArtworkResponse = zod.object({
   views: zod.number(),
   upscaled: zod.boolean(),
   authorName: zod.string().nullish(),
+  userLiked: zod
+    .boolean()
+    .describe(
+      "Whether the currently authenticated user has liked this artwork (false for unauthenticated)",
+    ),
   createdAt: zod.string(),
 });
 
@@ -166,6 +181,11 @@ export const ShareArtworkResponse = zod.object({
   views: zod.number(),
   upscaled: zod.boolean(),
   authorName: zod.string().nullish(),
+  userLiked: zod
+    .boolean()
+    .describe(
+      "Whether the currently authenticated user has liked this artwork (false for unauthenticated)",
+    ),
   createdAt: zod.string(),
 });
 
@@ -229,6 +249,11 @@ export const GetGalleryResponse = zod.object({
       views: zod.number(),
       upscaled: zod.boolean(),
       authorName: zod.string().nullish(),
+      userLiked: zod
+        .boolean()
+        .describe(
+          "Whether the currently authenticated user has liked this artwork (false for unauthenticated)",
+        ),
       createdAt: zod.string(),
     }),
   ),
@@ -323,6 +348,11 @@ export const GetMyOrdersResponseItem = zod.object({
     views: zod.number(),
     upscaled: zod.boolean(),
     authorName: zod.string().nullish(),
+    userLiked: zod
+      .boolean()
+      .describe(
+        "Whether the currently authenticated user has liked this artwork (false for unauthenticated)",
+      ),
     createdAt: zod.string(),
   }),
 });
@@ -408,6 +438,11 @@ export const AdminGetArtworksResponseItem = zod.object({
   views: zod.number(),
   upscaled: zod.boolean(),
   authorName: zod.string().nullish(),
+  userLiked: zod
+    .boolean()
+    .describe(
+      "Whether the currently authenticated user has liked this artwork (false for unauthenticated)",
+    ),
   createdAt: zod.string(),
 });
 export const AdminGetArtworksResponse = zod.array(AdminGetArtworksResponseItem);
@@ -441,6 +476,11 @@ export const AdminModerateArtworkResponse = zod.object({
   views: zod.number(),
   upscaled: zod.boolean(),
   authorName: zod.string().nullish(),
+  userLiked: zod
+    .boolean()
+    .describe(
+      "Whether the currently authenticated user has liked this artwork (false for unauthenticated)",
+    ),
   createdAt: zod.string(),
 });
 
@@ -513,6 +553,11 @@ export const AdminGetOrdersResponseItem = zod.object({
     views: zod.number(),
     upscaled: zod.boolean(),
     authorName: zod.string().nullish(),
+    userLiked: zod
+      .boolean()
+      .describe(
+        "Whether the currently authenticated user has liked this artwork (false for unauthenticated)",
+      ),
     createdAt: zod.string(),
   }),
 });

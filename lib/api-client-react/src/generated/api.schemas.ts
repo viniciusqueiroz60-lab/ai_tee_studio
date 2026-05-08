@@ -100,6 +100,8 @@ export interface Artwork {
   upscaled: boolean;
   /** @nullable */
   authorName?: string | null;
+  /** Whether the currently authenticated user has liked this artwork (false for unauthenticated) */
+  userLiked: boolean;
   createdAt: string;
 }
 

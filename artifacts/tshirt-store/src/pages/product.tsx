@@ -52,6 +52,7 @@ export default function ProductPage() {
   useEffect(() => {
     if (artwork) {
       setLikesCount(artwork.likes ?? 0);
+      setLiked(artwork.userLiked ?? false);
     }
   }, [artwork]);
 

@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db, artworksTable, usersTable, stylesTable } from "@workspace/db";
-import { eq, desc, and, asc, count, inArray } from "drizzle-orm";
+import { eq, desc, and, asc, count, inArray, sql } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -70,36 +70,27 @@ router.get("/gallery", async (req, res): Promise<void> => {
   });
 });
 
-// /gallery/styles — per-style public artwork counts
+// /gallery/styles — per-style public artwork counts (single grouped query, no N+1)
 router.get("/gallery/styles", async (_req, res): Promise<void> => {
-  const styles = await db
-    .select()
-    .from(stylesTable)
-    .where(eq(stylesTable.active, true))
-    .orderBy(asc(stylesTable.sortOrder));
+  const [styles, counts] = await Promise.all([
+    db.select().from(stylesTable).where(eq(stylesTable.active, true)).orderBy(asc(stylesTable.sortOrder)),
+    db
+      .select({ styleSlug: artworksTable.styleSlug, cnt: count() })
+      .from(artworksTable)
+      .where(and(eq(artworksTable.isShared, true), eq(artworksTable.moderationStatus, "approved"), sql`${artworksTable.styleSlug} IS NOT NULL`))
+      .groupBy(artworksTable.styleSlug),
+  ]);
 
-  const stats = await Promise.all(
-    styles.map(async (style) => {
-      const [{ cnt }] = await db
-        .select({ cnt: count() })
-        .from(artworksTable)
-        .where(
-          and(
-            eq(artworksTable.styleSlug, style.slug),
-            eq(artworksTable.isShared, true),
-            eq(artworksTable.moderationStatus, "approved")
-          )
-        );
-      return {
-        styleSlug: style.slug,
-        styleLabel: style.label,
-        icon: style.icon,
-        count: cnt,
-      };
-    })
+  const countMap = new Map(counts.map((r) => [r.styleSlug, r.cnt]));
+
+  res.json(
+    styles.map((style) => ({
+      styleSlug: style.slug,
+      styleLabel: style.label,
+      icon: style.icon,
+      count: countMap.get(style.slug) ?? 0,
+    }))
   );
-
-  res.json(stats);
 });
 
 // /gallery/stats — backward-compat alias for /gallery/styles
