@@ -133,6 +133,25 @@ router.get("/admin/orders", optionalAuth, requireAdmin, async (req: Authenticate
   res.json(result);
 });
 
+// Admin list — all styles including inactive
+router.get("/admin/styles", optionalAuth, requireAdmin, async (_req, res): Promise<void> => {
+  const styles = await db.select().from(stylesTable).orderBy(stylesTable.sortOrder);
+  res.json(styles.map((s) => ({
+    id: s.id, slug: s.slug, label: s.label, description: s.description,
+    icon: s.icon, promptParams: s.promptParams, active: s.active, sortOrder: s.sortOrder,
+  })));
+});
+
+// Admin list — all models including inactive
+router.get("/admin/models", optionalAuth, requireAdmin, async (_req, res): Promise<void> => {
+  const models = await db.select().from(tshirtModelsTable).orderBy(tshirtModelsTable.name);
+  res.json(models.map((m) => ({
+    id: m.id, name: m.name, description: m.description,
+    mockupUrl: m.mockupUrl, availableColors: m.availableColors,
+    active: m.active, price: m.price,
+  })));
+});
+
 // Styles CRUD
 router.post("/admin/styles", optionalAuth, requireAdmin, async (req: AuthenticatedRequest, res): Promise<void> => {
   const parsed = AdminCreateStyleBody.safeParse(req.body);

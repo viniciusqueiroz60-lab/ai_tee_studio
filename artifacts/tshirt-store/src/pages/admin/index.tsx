@@ -73,8 +73,8 @@ export default function AdminPage() {
         apiJson<AdminUser[]>("/admin/users"),
         apiJson<AdminArtwork[]>("/admin/artworks"),
         apiJson<AdminOrder[]>("/admin/orders"),
-        apiJson<Style[]>("/styles"),
-        apiJson<TshirtModel[]>("/models"),
+        apiJson<Style[]>("/admin/styles"),
+        apiJson<TshirtModel[]>("/admin/models"),
       ]);
       setUsers(u); setArtworks(a); setOrders(o);
       setStyles(s); setModels(m);

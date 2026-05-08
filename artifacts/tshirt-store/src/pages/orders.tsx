@@ -10,7 +10,9 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ShoppingBag, CheckCircle2, Clock, XCircle, Package } from "lucide-react";
 import { motion } from "framer-motion";
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof Clock }> = {
+type BadgeVariant = "default" | "secondary" | "destructive" | "outline";
+
+const STATUS_CONFIG: Record<string, { label: string; color: BadgeVariant; icon: typeof Clock }> = {
   pending: { label: "Aguardando pagamento", color: "secondary", icon: Clock },
   paid: { label: "Pago", color: "default", icon: CheckCircle2 },
   processing: { label: "Em produção", color: "default", icon: Package },
@@ -108,7 +110,7 @@ export default function OrdersPage() {
                                 Pedido #{order.id} · {order.color} · {order.size}
                               </p>
                             </div>
-                            <Badge variant={status.color as any} className="flex-shrink-0 gap-1">
+                            <Badge variant={status.color} className="flex-shrink-0 gap-1">
                               <Icon className="w-3 h-3" />
                               {status.label}
                             </Badge>
