@@ -4,8 +4,9 @@ import "./index.css";
 import { setBaseUrl, setAuthTokenGetter } from "@workspace/api-client-react";
 import { initFirebase, getIdToken } from "./lib/firebase";
 
-const BASE_URL = import.meta.env.BASE_URL.replace(/\/$/, "");
-setBaseUrl(`${BASE_URL}/api`);
+// The generated API client already has /api/ prefixed in every path,
+// so we don't set a base URL (it would double up to /api/api/...).
+setBaseUrl(null);
 setAuthTokenGetter(() => getIdToken());
 
 initFirebase().then(() => {
