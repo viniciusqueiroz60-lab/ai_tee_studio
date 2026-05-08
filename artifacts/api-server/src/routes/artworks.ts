@@ -187,8 +187,8 @@ router.get("/artworks/:artworkId", optionalAuth, async (req: AuthenticatedReques
 
   let authorName: string | null = null;
   if (artwork.userId) {
-    const [user] = await db.select({ displayName: usersTable.displayName, email: usersTable.email }).from(usersTable).where(eq(usersTable.id, artwork.userId));
-    authorName = user?.displayName ?? user?.email ?? null;
+    const [user] = await db.select({ displayName: usersTable.displayName }).from(usersTable).where(eq(usersTable.id, artwork.userId));
+    authorName = user?.displayName ?? null;
   }
 
   res.json(formatArtwork({ ...artwork, views: artwork.views + 1 }, authorName));

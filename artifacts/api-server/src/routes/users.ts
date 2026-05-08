@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db, usersTable, guestSessionsTable, artworksTable } from "@workspace/db";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, and, gt } from "drizzle-orm";
 import { optionalAuth, requireAuth, type AuthenticatedRequest } from "../middlewares/auth";
 
 const router: IRouter = Router();
@@ -36,40 +36,39 @@ router.post("/me/migrate-session", optionalAuth, requireAuth, async (req: Authen
     return;
   }
 
-  const [session] = await db
-    .select()
-    .from(guestSessionsTable)
-    .where(eq(guestSessionsTable.sessionId, sessionId));
+  // Atomically claim the guest session tokens and migrate everything in one transaction.
+  // Zeroing the guest balance first (WHERE tokenBalance > 0) makes this idempotent:
+  // concurrent or retried requests will see tokenBalance = 0 and credit nothing.
+  let tokensAdded = 0;
+  let artworksMigrated = 0;
 
-  if (!session) {
-    res.json({ migrated: false, tokensAdded: 0, artworksMigrated: 0 });
-    return;
-  }
+  await db.transaction(async (tx) => {
+    // Claim: atomically zero the guest balance and get the old value
+    const [claimed] = await tx
+      .update(guestSessionsTable)
+      .set({ tokenBalance: 0 })
+      .where(and(eq(guestSessionsTable.sessionId, sessionId), gt(guestSessionsTable.tokenBalance, 0)))
+      .returning({ tokenBalance: guestSessionsTable.tokenBalance });
 
-  const tokensToAdd = session.tokenBalance;
+    tokensAdded = claimed?.tokenBalance ?? 0;
 
-  // Migrate token balance atomically
-  if (tokensToAdd > 0) {
-    await db
-      .update(usersTable)
-      .set({ tokenBalance: sql`${usersTable.tokenBalance} + ${tokensToAdd}` })
-      .where(eq(usersTable.id, req.user!.id));
-  }
+    if (tokensAdded > 0) {
+      await tx
+        .update(usersTable)
+        .set({ tokenBalance: sql`${usersTable.tokenBalance} + ${tokensAdded}` })
+        .where(eq(usersTable.id, req.user!.id));
+    }
 
-  // Migrate guest artworks to the authenticated user
-  const migratedArtworks = await db
-    .update(artworksTable)
-    .set({ userId: req.user!.id, guestSessionId: null })
-    .where(eq(artworksTable.guestSessionId, sessionId))
-    .returning({ id: artworksTable.id });
+    const migrated = await tx
+      .update(artworksTable)
+      .set({ userId: req.user!.id, guestSessionId: null })
+      .where(eq(artworksTable.guestSessionId, sessionId))
+      .returning({ id: artworksTable.id });
 
-  // Zero out the guest session
-  await db
-    .update(guestSessionsTable)
-    .set({ tokenBalance: 0 })
-    .where(eq(guestSessionsTable.sessionId, sessionId));
+    artworksMigrated = migrated.length;
+  });
 
-  res.json({ migrated: true, tokensAdded: tokensToAdd, artworksMigrated: migratedArtworks.length });
+  res.json({ migrated: true, tokensAdded, artworksMigrated });
 });
 
 export default router;

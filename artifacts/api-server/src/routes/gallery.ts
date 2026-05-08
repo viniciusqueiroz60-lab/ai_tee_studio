@@ -43,10 +43,10 @@ router.get("/gallery", async (req, res): Promise<void> => {
 
   const userIds = artworks.map((a) => a.userId).filter((id): id is number => id != null);
   const users = userIds.length > 0
-    ? await db.select({ id: usersTable.id, displayName: usersTable.displayName, email: usersTable.email }).from(usersTable)
+    ? await db.select({ id: usersTable.id, displayName: usersTable.displayName }).from(usersTable)
     : [];
 
-  const userMap = new Map(users.map((u) => [u.id, u.displayName ?? u.email ?? null]));
+  const userMap = new Map(users.map((u) => [u.id, u.displayName ?? null]));
 
   res.json({
     artworks: artworks.map((a) => ({
