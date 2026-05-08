@@ -484,92 +484,112 @@ export default function CreatePage() {
           </div>
         </div>
 
-        {/* Mobile creation grid — shown when generating or artwork exists */}
-        {(artwork || generating) && (
+        {/* Mobile: always-visible "Seu Design" + "Refinamento" grid */}
         <div className="md:hidden mt-5">
-          <div className="grid gap-4" style={{ gridTemplateColumns: "1.5fr 1fr" }}>
-            {/* Left: preview card */}
-            <div className="bg-card rounded-xl p-3 border border-border shadow-sm">
-              <AnimatePresence mode="wait">
-                {generating ? (
-                  <motion.div
-                    key="generating"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="aspect-square rounded-lg bg-primary/5 border-2 border-dashed border-primary/30 flex flex-col items-center justify-center gap-3"
-                  >
-                    <div className="relative">
-                      <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
-                        <Wand2 className="w-6 h-6 text-primary animate-pulse" />
-                      </div>
-                      <div className="absolute inset-0 rounded-full border-2 border-primary/30 animate-ping" />
-                    </div>
-                    <p className="text-xs text-primary font-medium text-center px-2">Gerando...</p>
-                  </motion.div>
-                ) : artwork ? (
-                  <motion.div
-                    key={artwork.id}
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <div className="aspect-square rounded-lg overflow-hidden">
-                      <img
-                        src={artwork.imageUrl}
-                        alt={artwork.prompt}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  </motion.div>
-                ) : null}
-              </AnimatePresence>
+          <div className="grid gap-3" style={{ gridTemplateColumns: "1.5fr 1fr" }}>
 
-              {/* Icon action buttons */}
-              {artwork && !generating && (
-                <div className="flex gap-2 mt-3 justify-center">
-                  <button
-                    onClick={() => { setArtwork(null); setPrompt(""); setShared(false); }}
-                    className="w-9 h-9 rounded-full border border-border bg-card flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-                    title="Novo design"
-                  >
-                    <RefreshCw className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={handleShare}
-                    disabled={sharing || shared}
-                    className="w-9 h-9 rounded-full border border-border bg-card flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
-                    title={shared ? "Compartilhado!" : "Compartilhar na galeria"}
-                  >
-                    {sharing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Share2 className="w-4 h-4" />}
-                  </button>
-                  <button
-                    onClick={handleOrder}
-                    className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-primary-foreground shadow-sm hover:opacity-90 transition-opacity"
-                    title="Pedir camiseta"
-                  >
-                    <ShoppingCart className="w-4 h-4" />
-                  </button>
-                </div>
-              )}
+            {/* Left: "Seu Design" card */}
+            <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
+              {/* Card header */}
+              <div className="px-3 pt-3 pb-2">
+                <p className="text-[11px] font-semibold text-foreground">Seu Design</p>
+              </div>
+
+              {/* Artwork / placeholder */}
+              <div className="px-3 pb-3">
+                <AnimatePresence mode="wait">
+                  {generating ? (
+                    <motion.div
+                      key="generating"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="aspect-square rounded-xl bg-primary/5 border-2 border-dashed border-primary/30 flex flex-col items-center justify-center gap-2"
+                    >
+                      <div className="relative">
+                        <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                          <Wand2 className="w-5 h-5 text-primary animate-pulse" />
+                        </div>
+                        <div className="absolute inset-0 rounded-full border-2 border-primary/30 animate-ping" />
+                      </div>
+                      <p className="text-[10px] text-primary font-medium text-center px-1">Gerando...</p>
+                    </motion.div>
+                  ) : artwork ? (
+                    <motion.div
+                      key={artwork.id}
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <div className="aspect-square rounded-xl overflow-hidden">
+                        <img
+                          src={artwork.imageUrl}
+                          alt={artwork.prompt}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="empty"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="aspect-square rounded-xl border-2 border-dashed border-border/60 bg-muted/20 flex flex-col items-center justify-center gap-2 text-muted-foreground"
+                    >
+                      <Wand2 className="w-8 h-8 opacity-20" />
+                      <p className="text-[9px] text-center px-2 opacity-50 leading-tight">Descreva e<br/>clique em Gerar</p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Bottom action bar — Regenerar | Galeria | Pedir */}
+              <div className="border-t border-border flex">
+                <button
+                  onClick={() => { setArtwork(null); setPrompt(""); setShared(false); }}
+                  disabled={!artwork && !generating}
+                  className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30 border-r border-border"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span className="text-[9px]">Regenerar</span>
+                </button>
+                <button
+                  onClick={handleShare}
+                  disabled={!artwork || sharing || shared}
+                  className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30 border-r border-border"
+                >
+                  {sharing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Share2 className="w-3.5 h-3.5" />}
+                  <span className="text-[9px]">{shared ? "Enviado!" : "Galeria"}</span>
+                </button>
+                <button
+                  onClick={handleOrder}
+                  disabled={!artwork || generating}
+                  className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 text-primary disabled:opacity-30 hover:opacity-80 transition-opacity"
+                >
+                  <ShoppingCart className="w-3.5 h-3.5" />
+                  <span className="text-[9px] font-medium">Pedir</span>
+                </button>
+              </div>
             </div>
 
-            {/* Right: refinement panel */}
-            <div className="flex flex-col gap-4">
+            {/* Right: "Refinamento" panel */}
+            <div className="bg-card rounded-2xl border border-border shadow-sm p-3 flex flex-col gap-3">
+              <p className="text-[11px] font-semibold text-foreground">Refinamento</p>
+
               {/* Style pills */}
               {styles && styles.length > 0 && (
                 <div>
-                  <p className="text-xs font-medium mb-2">Estilo</p>
-                  <div className="flex flex-wrap gap-1.5">
+                  <p className="text-[10px] text-muted-foreground mb-1.5 uppercase tracking-wide">Estilo</p>
+                  <div className="flex flex-wrap gap-1">
                     {styles.map((style) => (
                       <button
                         key={style.slug}
                         onClick={() => setSelectedStyle(selectedStyle === style.slug ? null : style.slug)}
-                        className={`px-2 py-1 rounded-full text-[11px] border transition-all ${
+                        className={`px-2 py-0.5 rounded-full text-[10px] border transition-all ${
                           selectedStyle === style.slug
                             ? "bg-primary text-primary-foreground border-primary"
-                            : "bg-card text-muted-foreground border-border"
+                            : "bg-background text-muted-foreground border-border hover:border-primary/50"
                         }`}
                       >
                         {style.label.split(" ")[0]}
@@ -579,53 +599,43 @@ export default function CreatePage() {
                 </div>
               )}
 
-              {/* Refinement */}
-              {artwork && (
-                <div>
-                  <p className="text-xs font-medium mb-2">Refinar</p>
-                  {!user ? (
+              {/* Refine section */}
+              <div className="flex-1">
+                <p className="text-[10px] text-muted-foreground mb-1.5 uppercase tracking-wide">Refinar</p>
+                {!artwork ? (
+                  <div className="rounded-lg border border-dashed border-border/60 bg-muted/10 flex items-center justify-center py-4">
+                    <p className="text-[9px] text-muted-foreground/50 text-center px-2 leading-tight">Gere um design<br/>para refinar</p>
+                  </div>
+                ) : !user ? (
+                  <button
+                    onClick={() => setConversionModal("refine")}
+                    className="w-full flex flex-col items-center gap-1 py-3 rounded-lg border border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+                  >
+                    <Lock className="w-3.5 h-3.5" />
+                    <span className="text-[9px] text-center leading-tight">Entre para<br/>refinar</span>
+                  </button>
+                ) : (
+                  <>
+                    <Textarea
+                      placeholder="Ex: mais cores..."
+                      value={refinementPrompt}
+                      onChange={(e) => setRefinementPrompt(e.target.value)}
+                      className="min-h-[60px] text-[11px] resize-none p-2"
+                    />
                     <button
-                      onClick={() => setConversionModal("refine")}
-                      className="w-full flex flex-col items-center gap-1.5 py-4 rounded-lg border-2 border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+                      onClick={handleRefine}
+                      disabled={refining || !refinementPrompt.trim()}
+                      className="w-full mt-1.5 flex items-center justify-center gap-1 py-1.5 rounded-lg border border-border bg-background text-[10px] font-medium disabled:opacity-50 hover:bg-muted transition-colors"
                     >
-                      <Lock className="w-4 h-4" />
-                      <span className="text-[11px] text-center">Entre para refinar</span>
+                      {refining ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                      Refinar
                     </button>
-                  ) : (
-                    <>
-                      <Textarea
-                        placeholder="Adicione mais cores..."
-                        value={refinementPrompt}
-                        onChange={(e) => setRefinementPrompt(e.target.value)}
-                        className="min-h-[72px] text-xs resize-none"
-                      />
-                      <button
-                        onClick={handleRefine}
-                        disabled={refining || !refinementPrompt.trim()}
-                        className="w-full mt-2 flex items-center justify-center gap-1.5 py-2 rounded-lg border border-border bg-card text-xs font-medium disabled:opacity-50 hover:bg-muted transition-colors"
-                      >
-                        {refining ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
-                        Refinar
-                      </button>
-                    </>
-                  )}
-                </div>
-              )}
-
-              {/* Order CTA */}
-              {artwork && !generating && (
-                <button
-                  onClick={handleOrder}
-                  className="w-full bg-primary text-primary-foreground rounded-lg py-2.5 text-xs font-medium flex items-center justify-center gap-1.5 active:opacity-90 transition-opacity"
-                >
-                  <ShoppingCart className="w-3.5 h-3.5" />
-                  Pedir camiseta
-                </button>
-              )}
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>
-        )}
       </div>
 
       {conversionModal && (
