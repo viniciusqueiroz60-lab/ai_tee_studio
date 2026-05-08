@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db, artworksTable, usersTable, guestSessionsTable, stylesTable, artworkLikesTable } from "@workspace/db";
 import type { Artwork } from "@workspace/db";
-import { eq, desc, and, sql } from "drizzle-orm";
+import { eq, desc, and, sql, gt } from "drizzle-orm";
 import { optionalAuth, requireAuth, type AuthenticatedRequest } from "../middlewares/auth";
 import { generateArtworkImage, refineArtworkImage, buildEnrichedPrompt } from "../lib/gemini";
 import { GenerateArtworkBody, RefineArtworkBody } from "@workspace/api-zod";
@@ -58,26 +58,27 @@ router.post("/generate", optionalAuth, async (req: AuthenticatedRequest, res): P
     }
   }
 
-  // Token deduction
+  // Token deduction — atomic single-statement to prevent race conditions
   if (req.user) {
-    if (req.user.tokenBalance <= 0) {
+    const [deducted] = await db
+      .update(usersTable)
+      .set({ tokenBalance: sql`${usersTable.tokenBalance} - 1` })
+      .where(and(eq(usersTable.id, req.user.id), gt(usersTable.tokenBalance, 0)))
+      .returning({ tokenBalance: usersTable.tokenBalance });
+    if (!deducted) {
       res.status(402).json({ error: "Insufficient tokens" });
       return;
     }
-    await db
-      .update(usersTable)
-      .set({ tokenBalance: req.user.tokenBalance - 1 })
-      .where(eq(usersTable.id, req.user.id));
   } else if (sessionId) {
-    const [session] = await db.select().from(guestSessionsTable).where(eq(guestSessionsTable.sessionId, sessionId));
-    if (!session || session.tokenBalance <= 0) {
+    const [deducted] = await db
+      .update(guestSessionsTable)
+      .set({ tokenBalance: sql`${guestSessionsTable.tokenBalance} - 1` })
+      .where(and(eq(guestSessionsTable.sessionId, sessionId), gt(guestSessionsTable.tokenBalance, 0)))
+      .returning({ sessionId: guestSessionsTable.sessionId });
+    if (!deducted) {
       res.status(402).json({ error: "Insufficient guest tokens" });
       return;
     }
-    await db
-      .update(guestSessionsTable)
-      .set({ tokenBalance: session.tokenBalance - 1 })
-      .where(eq(guestSessionsTable.sessionId, sessionId));
   } else {
     res.status(402).json({ error: "No session or auth token provided" });
     return;
@@ -89,14 +90,15 @@ router.post("/generate", optionalAuth, async (req: AuthenticatedRequest, res): P
   try {
     imageUrl = await generateArtworkImage(prompt, promptParams);
   } catch (err: unknown) {
-    // Refund the token since generation failed
+    // Refund the token atomically since generation failed
     if (req.user) {
-      await db.update(usersTable).set({ tokenBalance: req.user.tokenBalance }).where(eq(usersTable.id, req.user.id));
+      await db.update(usersTable)
+        .set({ tokenBalance: sql`${usersTable.tokenBalance} + 1` })
+        .where(eq(usersTable.id, req.user.id));
     } else if (sessionId) {
-      const [session] = await db.select().from(guestSessionsTable).where(eq(guestSessionsTable.sessionId, sessionId));
-      if (session) {
-        await db.update(guestSessionsTable).set({ tokenBalance: session.tokenBalance + 1 }).where(eq(guestSessionsTable.sessionId, sessionId));
-      }
+      await db.update(guestSessionsTable)
+        .set({ tokenBalance: sql`${guestSessionsTable.tokenBalance} + 1` })
+        .where(eq(guestSessionsTable.sessionId, sessionId));
     }
     const msg = err instanceof Error ? err.message : "";
     if (msg.includes("429") || msg.includes("quota") || msg.includes("RESOURCE_EXHAUSTED")) {
@@ -144,13 +146,16 @@ router.post("/refine", optionalAuth, requireAuth, async (req: AuthenticatedReque
     return;
   }
 
-  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.user!.id));
-  if (!user || user.tokenBalance <= 0) {
+  // Atomic token debit for refine
+  const [deducted] = await db
+    .update(usersTable)
+    .set({ tokenBalance: sql`${usersTable.tokenBalance} - 1` })
+    .where(and(eq(usersTable.id, req.user!.id), gt(usersTable.tokenBalance, 0)))
+    .returning({ tokenBalance: usersTable.tokenBalance });
+  if (!deducted) {
     res.status(402).json({ error: "Insufficient tokens" });
     return;
   }
-
-  await db.update(usersTable).set({ tokenBalance: user.tokenBalance - 1 }).where(eq(usersTable.id, user.id));
 
   const newImageUrl = await refineArtworkImage(artwork.imageUrl, refinementPrompt);
 
@@ -246,10 +251,19 @@ router.delete("/artworks/:artworkId/like", optionalAuth, requireAuth, async (req
     return;
   }
 
-  await db.delete(artworkLikesTable).where(
-    and(eq(artworkLikesTable.userId, req.user!.id), eq(artworkLikesTable.artworkId, artworkId))
-  );
-  await db.update(artworksTable).set({ likes: sql`GREATEST(${artworksTable.likes} - 1, 0)` }).where(eq(artworksTable.id, artworkId));
+  // Only decrement likes if the like row actually existed (transactionally)
+  await db.transaction(async (tx) => {
+    const deleted = await tx
+      .delete(artworkLikesTable)
+      .where(and(eq(artworkLikesTable.userId, req.user!.id), eq(artworkLikesTable.artworkId, artworkId)))
+      .returning({ artworkId: artworkLikesTable.artworkId });
+    if (deleted.length > 0) {
+      await tx
+        .update(artworksTable)
+        .set({ likes: sql`GREATEST(${artworksTable.likes} - 1, 0)` })
+        .where(eq(artworksTable.id, artworkId));
+    }
+  });
 
   const [art] = await db.select({ likes: artworksTable.likes }).from(artworksTable).where(eq(artworksTable.id, artworkId));
   res.json({ likes: art?.likes ?? 0, liked: false });

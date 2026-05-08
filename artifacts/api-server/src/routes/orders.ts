@@ -16,7 +16,7 @@ function getStripe(): Stripe {
   return new Stripe(key);
 }
 
-function formatOrder(order: Order, artwork: Artwork) {
+function formatOrder(order: Order, artwork: Artwork | null | undefined) {
   return {
     id: order.id,
     userId: order.userId,
@@ -29,7 +29,7 @@ function formatOrder(order: Order, artwork: Artwork) {
     masterized: order.masterized,
     totalPrice: order.totalPrice,
     createdAt: order.createdAt instanceof Date ? order.createdAt.toISOString() : order.createdAt,
-    artwork: {
+    artwork: artwork ? {
       id: artwork.id,
       userId: artwork.userId,
       guestSessionId: artwork.guestSessionId,
@@ -45,7 +45,7 @@ function formatOrder(order: Order, artwork: Artwork) {
       upscaled: artwork.upscaled,
       authorName: null,
       createdAt: artwork.createdAt instanceof Date ? artwork.createdAt.toISOString() : artwork.createdAt,
-    },
+    } : null,
   };
 }
 

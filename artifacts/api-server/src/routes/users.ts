@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db, usersTable, guestSessionsTable, artworksTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { optionalAuth, requireAuth, type AuthenticatedRequest } from "../middlewares/auth";
 
 const router: IRouter = Router();
@@ -48,11 +48,11 @@ router.post("/me/migrate-session", optionalAuth, requireAuth, async (req: Authen
 
   const tokensToAdd = session.tokenBalance;
 
-  // Migrate token balance
+  // Migrate token balance atomically
   if (tokensToAdd > 0) {
     await db
       .update(usersTable)
-      .set({ tokenBalance: req.user!.tokenBalance + tokensToAdd })
+      .set({ tokenBalance: sql`${usersTable.tokenBalance} + ${tokensToAdd}` })
       .where(eq(usersTable.id, req.user!.id));
   }
 
