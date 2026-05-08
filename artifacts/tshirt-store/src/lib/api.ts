@@ -1,6 +1,7 @@
 import { getIdToken } from "./firebase";
 
 export const SESSION_KEY = "tshirt_guest_session_id";
+export const MIGRATION_NONCE_KEY = "tshirt_guest_migration_nonce";
 
 export function getSessionId(): string | null {
   return localStorage.getItem(SESSION_KEY);
@@ -8,6 +9,14 @@ export function getSessionId(): string | null {
 
 export function setSessionId(id: string): void {
   localStorage.setItem(SESSION_KEY, id);
+}
+
+export function getMigrationNonce(): string | null {
+  return localStorage.getItem(MIGRATION_NONCE_KEY);
+}
+
+export function setMigrationNonce(nonce: string): void {
+  localStorage.setItem(MIGRATION_NONCE_KEY, nonce);
 }
 
 const BASE_URL = import.meta.env.BASE_URL.replace(/\/$/, "");

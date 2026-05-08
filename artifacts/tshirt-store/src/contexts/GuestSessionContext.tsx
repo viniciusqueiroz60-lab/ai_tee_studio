@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { apiJson, SESSION_KEY, setSessionId, getSessionId } from "@/lib/api";
+import { apiJson, SESSION_KEY, setSessionId, getSessionId, setMigrationNonce } from "@/lib/api";
 
 interface GuestSession {
   sessionId: string;
@@ -26,11 +26,12 @@ export function GuestSessionProvider({ children }: { children: ReactNode }) {
   async function refreshSession() {
     try {
       const existingId = getSessionId();
-      const data = await apiJson<GuestSession>("/session/init", {
+      const data = await apiJson<GuestSession & { migrationNonce?: string }>("/session/init", {
         method: "POST",
         body: JSON.stringify({ sessionId: existingId }),
       });
       setSessionId(data.sessionId);
+      if (data.migrationNonce) setMigrationNonce(data.migrationNonce);
       setSession(data);
     } catch {
       setSession(null);

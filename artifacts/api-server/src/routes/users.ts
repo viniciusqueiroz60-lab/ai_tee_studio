@@ -28,10 +28,12 @@ router.get("/me", optionalAuth, requireAuth, async (req: AuthenticatedRequest, r
   });
 });
 
-// Called after auth to migrate guest tokens and artworks to the authenticated account
+// Called after auth to migrate guest tokens and artworks to the authenticated account.
+// Requires both sessionId and migrationNonce (a one-time proof of session ownership
+// issued by /session/init) to prevent token/artwork theft via leaked session IDs.
 router.post("/me/migrate-session", optionalAuth, requireAuth, async (req: AuthenticatedRequest, res): Promise<void> => {
-  const { sessionId } = req.body as { sessionId?: string };
-  if (!sessionId) {
+  const { sessionId, migrationNonce } = req.body as { sessionId?: string; migrationNonce?: string };
+  if (!sessionId || !migrationNonce) {
     res.json({ migrated: false });
     return;
   }
@@ -44,20 +46,25 @@ router.post("/me/migrate-session", optionalAuth, requireAuth, async (req: Authen
 
   await db.transaction(async (tx) => {
     // SELECT FOR UPDATE locks the row so concurrent requests block here.
-    // We read the pre-zero balance from the locked row, then zero it.
-    // Any subsequent concurrent request will read 0 and skip the credit.
+    // Verify nonce ownership before proceeding — rejects requests that know
+    // the sessionId but not the one-time migrationNonce.
     const [session] = await tx
-      .select({ tokenBalance: guestSessionsTable.tokenBalance })
+      .select({ tokenBalance: guestSessionsTable.tokenBalance, migrationNonce: guestSessionsTable.migrationNonce })
       .from(guestSessionsTable)
       .where(eq(guestSessionsTable.sessionId, sessionId))
       .for("update");
 
-    tokensAdded = session?.tokenBalance ?? 0;
+    if (!session || session.migrationNonce !== migrationNonce) {
+      // Nonce mismatch or session not found — refuse migration silently
+      return;
+    }
 
-    // Always zero out the guest session (idempotent)
+    tokensAdded = session.tokenBalance;
+
+    // Zero out the session balance and clear the one-time nonce (consumed after use)
     await tx
       .update(guestSessionsTable)
-      .set({ tokenBalance: 0 })
+      .set({ tokenBalance: 0, migrationNonce: null })
       .where(eq(guestSessionsTable.sessionId, sessionId));
 
     if (tokensAdded > 0) {

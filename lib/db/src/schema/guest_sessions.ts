@@ -7,6 +7,8 @@ export const guestSessionsTable = pgTable("guest_sessions", {
   tokenBalance: integer("token_balance").notNull().default(3),
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  /** One-time nonce that proves session ownership during migration. Cleared after use. */
+  migrationNonce: text("migration_nonce"),
 });
 
 export const insertGuestSessionSchema = createInsertSchema(guestSessionsTable).omit({ createdAt: true });

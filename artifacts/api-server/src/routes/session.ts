@@ -20,8 +20,18 @@ router.post("/session/init", async (req, res): Promise<void> => {
       .where(eq(guestSessionsTable.sessionId, existingSessionId));
 
     if (existing && existing.expiresAt > new Date()) {
+      // Return existing nonce (already set), or generate one now for legacy sessions
+      let nonce = existing.migrationNonce;
+      if (!nonce) {
+        nonce = randomUUID();
+        await db
+          .update(guestSessionsTable)
+          .set({ migrationNonce: nonce })
+          .where(eq(guestSessionsTable.sessionId, existingSessionId));
+      }
       res.json({
         sessionId: existing.sessionId,
+        migrationNonce: nonce,
         tokenBalance: existing.tokenBalance,
         expiresAt: existing.expiresAt.toISOString(),
       });
@@ -30,16 +40,18 @@ router.post("/session/init", async (req, res): Promise<void> => {
   }
 
   const sessionId = randomUUID();
+  const migrationNonce = randomUUID();
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + SESSION_TTL_DAYS);
 
   const [session] = await db
     .insert(guestSessionsTable)
-    .values({ sessionId, tokenBalance: GUEST_TOKEN_INITIAL, expiresAt })
+    .values({ sessionId, migrationNonce, tokenBalance: GUEST_TOKEN_INITIAL, expiresAt })
     .returning();
 
   res.json({
     sessionId: session.sessionId,
+    migrationNonce: session.migrationNonce,
     tokenBalance: session.tokenBalance,
     expiresAt: session.expiresAt.toISOString(),
   });

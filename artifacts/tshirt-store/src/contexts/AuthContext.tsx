@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { onAuth, getIdToken, type User } from "@/lib/firebase";
-import { SESSION_KEY } from "@/lib/api";
+import { SESSION_KEY, getMigrationNonce } from "@/lib/api";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -73,13 +73,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setRole(data.role === "admin" ? "admin" : "user");
           }
           if (sessionId) {
+            const migrationNonce = getMigrationNonce();
             const migRes = await fetch(`${BASE}/api/me/migrate-session`, {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${token}`,
               },
-              body: JSON.stringify({ sessionId }),
+              body: JSON.stringify({ sessionId, migrationNonce }),
             });
             if (migRes.ok) {
               const migData = await migRes.json();
