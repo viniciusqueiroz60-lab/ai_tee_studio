@@ -41,8 +41,10 @@ router.post("/me/migrate-session", optionalAuth, requireAuth, async (req: Authen
   // Atomically claim the guest session tokens and migrate everything in one transaction.
   // Zeroing the guest balance first (WHERE tokenBalance > 0) makes this idempotent:
   // concurrent or retried requests will see tokenBalance = 0 and credit nothing.
+  let migrationSucceeded = false;
   let tokensAdded = 0;
   let artworksMigrated = 0;
+  let failureReason: string | null = null;
 
   await db.transaction(async (tx) => {
     // SELECT FOR UPDATE locks the row so concurrent requests block here.
@@ -54,8 +56,12 @@ router.post("/me/migrate-session", optionalAuth, requireAuth, async (req: Authen
       .where(eq(guestSessionsTable.sessionId, sessionId))
       .for("update");
 
-    if (!session || session.migrationNonce !== migrationNonce) {
-      // Nonce mismatch or session not found — refuse migration silently
+    if (!session) {
+      failureReason = "session_not_found";
+      return;
+    }
+    if (session.migrationNonce !== migrationNonce) {
+      failureReason = "nonce_mismatch";
       return;
     }
 
@@ -81,7 +87,13 @@ router.post("/me/migrate-session", optionalAuth, requireAuth, async (req: Authen
       .returning({ id: artworksTable.id });
 
     artworksMigrated = migrated.length;
+    migrationSucceeded = true;
   });
+
+  if (!migrationSucceeded) {
+    res.json({ migrated: false, reason: failureReason });
+    return;
+  }
 
   res.json({ migrated: true, tokensAdded, artworksMigrated });
 });
