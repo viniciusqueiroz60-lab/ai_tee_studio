@@ -32,11 +32,11 @@ export default function MyArtworksPage() {
   }
 
   return (
-    <div className="min-h-screen py-8">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between mb-8">
+    <div className="min-h-screen py-6 md:py-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between mb-6 md:mb-8">
           <div>
-            <h1 className="text-3xl font-black mb-1">Meus Designs</h1>
+            <h1 className="font-display text-2xl md:text-3xl mb-1">Meus Designs</h1>
             <p className="text-muted-foreground">Todos os seus designs criados com IA</p>
           </div>
           <Button asChild className="gap-2">

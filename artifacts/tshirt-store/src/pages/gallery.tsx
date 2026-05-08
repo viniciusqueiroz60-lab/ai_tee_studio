@@ -194,13 +194,13 @@ export default function GalleryPage() {
 
   return (
     <div className="min-h-screen">
-      <div className="px-4 pt-5 pb-4">
-        <h1 className="font-display text-2xl mb-1 text-foreground">Galeria da Comunidade</h1>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-4">
+        <h1 className="font-display text-2xl md:text-3xl mb-1 text-foreground">Galeria da Comunidade</h1>
         <p className="text-sm text-muted-foreground">Designs criados com IA pela nossa comunidade</p>
       </div>
 
       {/* Sort pills + style filter */}
-      <div className="px-4 mb-4 space-y-3">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-5 space-y-3">
         <div className="flex gap-2">
           {(["recent", "popular"] as const).map((s) => (
             <button
@@ -246,9 +246,9 @@ export default function GalleryPage() {
       </div>
 
         {/* Grid */}
-      <div className="px-4 pb-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
         {isLoading ? (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
             {[...Array(8)].map((_, i) => (
               <div key={i} className="aspect-square">
                 <Skeleton className="w-full h-full rounded-xl" />
@@ -271,7 +271,7 @@ export default function GalleryPage() {
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
             {artworks.map((artwork, i) => (
               <motion.div
                 key={artwork.id}

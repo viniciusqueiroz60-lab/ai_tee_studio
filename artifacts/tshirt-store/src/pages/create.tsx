@@ -307,80 +307,186 @@ export default function CreatePage() {
 
   return (
     <div className="min-h-screen">
-      {/* Prompt section */}
-      <section className="px-4 pt-4 pb-0">
-        <h1 className="font-display text-2xl mb-1 text-foreground">Criar Design</h1>
-        <p className="text-xs text-muted-foreground mb-3">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 md:pt-10">
+        <h1 className="font-display text-2xl md:text-3xl mb-1 text-foreground">Criar Design</h1>
+        <p className="text-xs md:text-sm text-muted-foreground mb-5">
           Descreva sua ideia e nossa IA cria para você
         </p>
 
-        {error && (
-          <Alert variant="destructive" className="mb-3 py-2">
-            <AlertCircle className="w-4 h-4" />
-            <AlertDescription className="text-sm">{error}</AlertDescription>
-          </Alert>
-        )}
+        {/* On desktop: two-col layout from the start (prompt+controls left, preview right) */}
+        <div className="md:grid md:grid-cols-[1fr_1fr] md:gap-10 lg:grid-cols-[1.2fr_1fr]">
+          {/* Left column: prompt + style + refinement */}
+          <div className="space-y-4">
+            {error && (
+              <Alert variant="destructive" className="py-2">
+                <AlertCircle className="w-4 h-4" />
+                <AlertDescription className="text-sm">{error}</AlertDescription>
+              </Alert>
+            )}
 
-        {!hasTokens && (
-          <Alert className="mb-3 py-2">
-            <Lock className="w-4 h-4" />
-            <AlertDescription className="text-sm">
-              Tokens esgotados.{" "}
-              <Link href="/auth" className="font-semibold underline">Cadastre-se</Link>{" "}
-              para ganhar mais.
-            </AlertDescription>
-          </Alert>
-        )}
+            {!hasTokens && (
+              <Alert className="py-2">
+                <Lock className="w-4 h-4" />
+                <AlertDescription className="text-sm">
+                  Tokens esgotados.{" "}
+                  <Link href="/auth" className="font-semibold underline">Cadastre-se</Link>{" "}
+                  para ganhar mais.
+                </AlertDescription>
+              </Alert>
+            )}
 
-        <Textarea
-          placeholder="Ex: um dragão japonês entre flores de cerejeira..."
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          className="min-h-[110px] text-sm resize-none bg-card border-border focus:border-primary"
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleGenerate();
-          }}
-        />
+            <div>
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide block mb-2">Descrição</label>
+              <Textarea
+                placeholder="Ex: um dragão japonês entre flores de cerejeira..."
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                className="min-h-[110px] text-sm resize-none bg-card border-border focus:border-primary"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleGenerate();
+                }}
+              />
+            </div>
 
-        <button
-          onClick={handleGenerate}
-          disabled={generating || !prompt.trim() || !hasTokens}
-          className="w-full mt-3 bg-primary text-primary-foreground rounded-lg py-3 text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed active:opacity-90 transition-opacity"
-        >
-          {generating ? (
-            <><Loader2 className="w-4 h-4 animate-spin" /> Gerando com IA...</>
-          ) : (
-            <><Wand2 className="w-4 h-4" /> Gerar Design</>
-          )}
-        </button>
-      </section>
+            {/* Style picker */}
+            {styles && styles.length > 0 && (
+              <div>
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide block mb-2">Estilo</label>
+                <div className="flex flex-wrap gap-2">
+                  {styles.map((style) => (
+                    <button
+                      key={style.slug}
+                      onClick={() => setSelectedStyle(selectedStyle === style.slug ? null : style.slug)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs border transition-all ${
+                        selectedStyle === style.slug
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-card text-muted-foreground border-border"
+                      }`}
+                    >
+                      <span>{STYLE_EMOJIS[style.slug] ?? style.icon ?? "🎨"}</span>
+                      {style.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
-      {/* Style picker (when no artwork yet) */}
-      {!artwork && !generating && styles && styles.length > 0 && (
-        <section className="px-4 mt-5">
-          <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">Estilo</p>
-          <div className="flex flex-wrap gap-2">
-            {styles.map((style) => (
-              <button
-                key={style.slug}
-                onClick={() => setSelectedStyle(selectedStyle === style.slug ? null : style.slug)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs border transition-all ${
-                  selectedStyle === style.slug
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "bg-card text-muted-foreground border-border"
-                }`}
-              >
-                <span>{STYLE_EMOJIS[style.slug] ?? style.icon ?? "🎨"}</span>
-                {style.label}
-              </button>
-            ))}
+            <button
+              onClick={handleGenerate}
+              disabled={generating || !prompt.trim() || !hasTokens}
+              className="w-full bg-primary text-primary-foreground rounded-xl py-3 text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity"
+            >
+              {generating ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> Gerando com IA...</>
+              ) : (
+                <><Wand2 className="w-4 h-4" /> Gerar Design</>
+              )}
+            </button>
+
+            {/* Refinement — desktop: shown in left col below generate */}
+            {artwork && (
+              <div className="hidden md:block pt-2 border-t border-border">
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide block mb-2">Refinar Design</label>
+                {!user ? (
+                  <button
+                    onClick={() => setConversionModal("refine")}
+                    className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary transition-colors text-sm"
+                  >
+                    <Lock className="w-4 h-4" />
+                    Entre para refinar com IA
+                  </button>
+                ) : (
+                  <>
+                    <Textarea
+                      placeholder="Ex: adicione mais cores, mude o fundo..."
+                      value={refinementPrompt}
+                      onChange={(e) => setRefinementPrompt(e.target.value)}
+                      className="min-h-[80px] resize-none text-sm"
+                    />
+                    <button
+                      onClick={handleRefine}
+                      disabled={refining || !refinementPrompt.trim()}
+                      className="w-full mt-2 flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-border bg-card text-sm font-medium disabled:opacity-50 hover:bg-muted transition-colors"
+                    >
+                      {refining ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                      Refinar
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
           </div>
-        </section>
-      )}
 
-      {/* Creation grid — shown when generating or artwork exists */}
-      {(artwork || generating) && (
-        <section className="px-4 mt-5">
+          {/* Right column: preview (always visible on desktop) */}
+          <div className="hidden md:block">
+            <AnimatePresence mode="wait">
+              {generating ? (
+                <motion.div key="generating" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                  className="aspect-square rounded-2xl border-2 border-dashed border-primary/40 bg-primary/5 flex flex-col items-center justify-center gap-4"
+                >
+                  <div className="relative">
+                    <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center">
+                      <Wand2 className="w-8 h-8 text-primary animate-pulse" />
+                    </div>
+                    <div className="absolute inset-0 rounded-full border-2 border-primary/30 animate-ping" />
+                  </div>
+                  <div className="text-center">
+                    <p className="font-semibold text-primary text-sm">Gerando com Gemini AI...</p>
+                    <p className="text-xs text-muted-foreground mt-1">Isso pode levar alguns segundos</p>
+                  </div>
+                </motion.div>
+              ) : artwork ? (
+                <motion.div key={artwork.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}
+                  className="space-y-4"
+                >
+                  <div className="relative aspect-square rounded-2xl overflow-hidden border border-border shadow-xl">
+                    <img src={artwork.imageUrl} alt={artwork.prompt} className="w-full h-full object-cover" />
+                    {artwork.styleLabel && (
+                      <div className="absolute top-3 right-3">
+                        <Badge variant="secondary" className="bg-black/50 text-white border-white/20 backdrop-blur-sm">
+                          {artwork.styleLabel}
+                        </Badge>
+                      </div>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button onClick={handleShare} disabled={sharing || shared}
+                      className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-border bg-card text-sm font-medium disabled:opacity-50 hover:bg-muted transition-colors"
+                    >
+                      {sharing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Share2 className="w-4 h-4" />}
+                      {shared ? "Compartilhado!" : "Compartilhar"}
+                    </button>
+                    <button onClick={handleOrder}
+                      className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
+                    >
+                      <ShoppingCart className="w-4 h-4" />
+                      Pedir camiseta
+                    </button>
+                  </div>
+                  <button onClick={() => { setArtwork(null); setPrompt(""); setShared(false); }}
+                    className="w-full flex items-center justify-center gap-2 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <RefreshCw className="w-4 h-4" /> Criar novo design
+                  </button>
+                </motion.div>
+              ) : (
+                <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                  className="aspect-square rounded-2xl border-2 border-dashed border-border bg-muted/30 flex flex-col items-center justify-center gap-3 text-muted-foreground"
+                >
+                  <Wand2 className="w-12 h-12 opacity-30" />
+                  <div className="text-center">
+                    <p className="font-medium text-sm">Seu design aparecerá aqui</p>
+                    <p className="text-xs mt-1 opacity-70">Descreva e clique em Gerar</p>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+
+        {/* Mobile creation grid — shown when generating or artwork exists */}
+        {(artwork || generating) && (
+        <div className="md:hidden mt-5">
           <div className="grid gap-4" style={{ gridTemplateColumns: "1.5fr 1fr" }}>
             {/* Left: preview card */}
             <div className="bg-card rounded-xl p-3 border border-border shadow-sm">
@@ -518,8 +624,9 @@ export default function CreatePage() {
               )}
             </div>
           </div>
-        </section>
-      )}
+        </div>
+        )}
+      </div>
 
       {conversionModal && (
         <GuestConversionModal

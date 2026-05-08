@@ -34,9 +34,10 @@ const BASE_URL = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 function AppRoutes() {
   return (
-    <div className="max-w-[480px] mx-auto min-h-screen flex flex-col bg-background relative">
+    <div className="min-h-screen flex flex-col bg-background">
       <AppHeader />
-      <main className="flex-1 pb-[80px]">
+      {/* pb-[70px] on mobile for bottom nav; none on md+ */}
+      <main className="flex-1 pb-[70px] md:pb-0">
         <Switch>
           <Route path="/" component={HomePage} />
           <Route path="/auth" component={AuthPage} />
