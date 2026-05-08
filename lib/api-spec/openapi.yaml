@@ -74,6 +74,27 @@ paths:
         "401":
           description: Unauthorized
 
+  /me/migrate-session:
+    post:
+      operationId: migrateSession
+      tags: [users]
+      summary: Migrate guest session tokens and artworks to authenticated account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MigrateSessionRequest"
+      responses:
+        "200":
+          description: Migration result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionMigrationResult"
+        "401":
+          description: Unauthorized
+
   /me/artworks:
     get:
       operationId: getMyArtworks
@@ -458,6 +479,52 @@ paths:
         "403":
           description: Forbidden
 
+  /admin/artworks/{artworkId}/approve:
+    post:
+      operationId: adminApproveArtwork
+      tags: [admin]
+      summary: Approve an artwork (admin only — alias for moderation endpoint)
+      parameters:
+        - name: artworkId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Artwork approved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArtworkModerationResult"
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+
+  /admin/artworks/{artworkId}/reject:
+    post:
+      operationId: adminRejectArtwork
+      tags: [admin]
+      summary: Reject an artwork (admin only — alias for moderation endpoint)
+      parameters:
+        - name: artworkId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Artwork rejected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArtworkModerationResult"
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+
   /admin/artworks/{artworkId}:
     delete:
       operationId: adminDeleteArtwork
@@ -499,6 +566,21 @@ paths:
           description: Forbidden
 
   /admin/styles:
+    get:
+      operationId: adminGetStyles
+      tags: [admin]
+      summary: List all styles including inactive (admin only)
+      responses:
+        "200":
+          description: All styles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Style"
+        "403":
+          description: Forbidden
     post:
       operationId: adminCreateStyle
       tags: [admin]
@@ -562,6 +644,21 @@ paths:
           description: Forbidden
 
   /admin/models:
+    get:
+      operationId: adminGetModels
+      tags: [admin]
+      summary: List all t-shirt models including inactive (admin only)
+      responses:
+        "200":
+          description: All models
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TshirtModel"
+        "403":
+          description: Forbidden
     post:
       operationId: adminCreateModel
       tags: [admin]
@@ -633,6 +730,40 @@ components:
           type: string
       required:
         - status
+
+    MigrateSessionRequest:
+      type: object
+      properties:
+        sessionId:
+          type: string
+      required:
+        - sessionId
+
+    SessionMigrationResult:
+      type: object
+      properties:
+        migrated:
+          type: boolean
+        tokensAdded:
+          type: integer
+        artworksMigrated:
+          type: integer
+      required:
+        - migrated
+        - tokensAdded
+        - artworksMigrated
+
+    ArtworkModerationResult:
+      type: object
+      properties:
+        id:
+          type: integer
+        moderationStatus:
+          type: string
+          enum: [pending, approved, rejected]
+      required:
+        - id
+        - moderationStatus
 
     InitSessionRequest:
       type: object

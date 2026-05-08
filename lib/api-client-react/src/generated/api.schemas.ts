@@ -9,6 +9,30 @@ export interface HealthStatus {
   status: string;
 }
 
+export interface MigrateSessionRequest {
+  sessionId: string;
+}
+
+export interface SessionMigrationResult {
+  migrated: boolean;
+  tokensAdded: number;
+  artworksMigrated: number;
+}
+
+export type ArtworkModerationResultModerationStatus =
+  (typeof ArtworkModerationResultModerationStatus)[keyof typeof ArtworkModerationResultModerationStatus];
+
+export const ArtworkModerationResultModerationStatus = {
+  pending: "pending",
+  approved: "approved",
+  rejected: "rejected",
+} as const;
+
+export interface ArtworkModerationResult {
+  id: number;
+  moderationStatus: ArtworkModerationResultModerationStatus;
+}
+
 export interface InitSessionRequest {
   /** @nullable */
   sessionId?: string | null;

@@ -42,6 +42,19 @@ export const GetMeResponse = zod.object({
 });
 
 /**
+ * @summary Migrate guest session tokens and artworks to authenticated account
+ */
+export const MigrateSessionBody = zod.object({
+  sessionId: zod.string(),
+});
+
+export const MigrateSessionResponse = zod.object({
+  migrated: zod.boolean(),
+  tokensAdded: zod.number(),
+  artworksMigrated: zod.number(),
+});
+
+/**
  * @summary Get current user's artworks
  */
 export const GetMyArtworksResponseItem = zod.object({
@@ -225,14 +238,14 @@ export const GetGalleryResponse = zod.object({
 });
 
 /**
- * @summary Get gallery statistics by style
+ * @summary Get per-style public artwork counts
  */
-export const GetGalleryStatsResponseItem = zod.object({
+export const GetGalleryStylesResponseItem = zod.object({
   styleSlug: zod.string(),
   styleLabel: zod.string(),
   count: zod.number(),
 });
-export const GetGalleryStatsResponse = zod.array(GetGalleryStatsResponseItem);
+export const GetGalleryStylesResponse = zod.array(GetGalleryStylesResponseItem);
 
 /**
  * @summary List all active styles
@@ -432,6 +445,30 @@ export const AdminModerateArtworkResponse = zod.object({
 });
 
 /**
+ * @summary Approve an artwork (admin only — alias for moderation endpoint)
+ */
+export const AdminApproveArtworkParams = zod.object({
+  artworkId: zod.coerce.number(),
+});
+
+export const AdminApproveArtworkResponse = zod.object({
+  id: zod.number(),
+  moderationStatus: zod.enum(["pending", "approved", "rejected"]),
+});
+
+/**
+ * @summary Reject an artwork (admin only — alias for moderation endpoint)
+ */
+export const AdminRejectArtworkParams = zod.object({
+  artworkId: zod.coerce.number(),
+});
+
+export const AdminRejectArtworkResponse = zod.object({
+  id: zod.number(),
+  moderationStatus: zod.enum(["pending", "approved", "rejected"]),
+});
+
+/**
  * @summary Delete an artwork (admin only)
  */
 export const AdminDeleteArtworkParams = zod.object({
@@ -482,6 +519,21 @@ export const AdminGetOrdersResponseItem = zod.object({
 export const AdminGetOrdersResponse = zod.array(AdminGetOrdersResponseItem);
 
 /**
+ * @summary List all styles including inactive (admin only)
+ */
+export const AdminGetStylesResponseItem = zod.object({
+  id: zod.number(),
+  slug: zod.string(),
+  label: zod.string(),
+  description: zod.string().nullish(),
+  icon: zod.string().nullish(),
+  promptParams: zod.string(),
+  active: zod.boolean(),
+  sortOrder: zod.number(),
+});
+export const AdminGetStylesResponse = zod.array(AdminGetStylesResponseItem);
+
+/**
  * @summary Create a new style (admin only)
  */
 export const AdminCreateStyleBody = zod.object({
@@ -528,6 +580,20 @@ export const AdminUpdateStyleResponse = zod.object({
 export const AdminDeleteStyleParams = zod.object({
   styleId: zod.coerce.number(),
 });
+
+/**
+ * @summary List all t-shirt models including inactive (admin only)
+ */
+export const AdminGetModelsResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  description: zod.string().nullish(),
+  mockupUrl: zod.string().nullish(),
+  availableColors: zod.array(zod.string()),
+  active: zod.boolean(),
+  price: zod.number(),
+});
+export const AdminGetModelsResponse = zod.array(AdminGetModelsResponseItem);
 
 /**
  * @summary Create a t-shirt model (admin only)

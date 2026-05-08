@@ -22,6 +22,7 @@ import type {
   AdminGetOrdersParams,
   AdminGetUsersParams,
   Artwork,
+  ArtworkModerationResult,
   CheckoutSession,
   CreateCheckoutRequest,
   GalleryResponse,
@@ -31,9 +32,11 @@ import type {
   HealthStatus,
   InitSessionRequest,
   LikeResponse,
+  MigrateSessionRequest,
   ModerationRequest,
   Order,
   RefineArtworkRequest,
+  SessionMigrationResult,
   Style,
   StyleStat,
   TshirtModel,
@@ -275,6 +278,92 @@ export function useGetMe<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Migrate guest session tokens and artworks to authenticated account
+ */
+export const getMigrateSessionUrl = () => {
+  return `/api/me/migrate-session`;
+};
+
+export const migrateSession = async (
+  migrateSessionRequest: MigrateSessionRequest,
+  options?: RequestInit,
+): Promise<SessionMigrationResult> => {
+  return customFetch<SessionMigrationResult>(getMigrateSessionUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(migrateSessionRequest),
+  });
+};
+
+export const getMigrateSessionMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof migrateSession>>,
+    TError,
+    { data: BodyType<MigrateSessionRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof migrateSession>>,
+  TError,
+  { data: BodyType<MigrateSessionRequest> },
+  TContext
+> => {
+  const mutationKey = ["migrateSession"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof migrateSession>>,
+    { data: BodyType<MigrateSessionRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return migrateSession(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type MigrateSessionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof migrateSession>>
+>;
+export type MigrateSessionMutationBody = BodyType<MigrateSessionRequest>;
+export type MigrateSessionMutationError = ErrorType<void>;
+
+/**
+ * @summary Migrate guest session tokens and artworks to authenticated account
+ */
+export const useMigrateSession = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof migrateSession>>,
+    TError,
+    { data: BodyType<MigrateSessionRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof migrateSession>>,
+  TError,
+  { data: BodyType<MigrateSessionRequest> },
+  TContext
+> => {
+  return useMutation(getMigrateSessionMutationOptions(options));
+};
 
 /**
  * @summary Get current user's artworks
@@ -991,9 +1080,9 @@ export const getGetGalleryStylesQueryOptions = <
 
   const queryKey = queryOptions?.queryKey ?? getGetGalleryStylesQueryKey();
 
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof getGalleryStyles>>> = ({
-    signal,
-  }) => getGalleryStyles({ signal, ...requestOptions });
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getGalleryStyles>>
+  > = ({ signal }) => getGalleryStyles({ signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof getGalleryStyles>>,
@@ -1777,6 +1866,180 @@ export const useAdminModerateArtwork = <
 };
 
 /**
+ * @summary Approve an artwork (admin only — alias for moderation endpoint)
+ */
+export const getAdminApproveArtworkUrl = (artworkId: number) => {
+  return `/api/admin/artworks/${artworkId}/approve`;
+};
+
+export const adminApproveArtwork = async (
+  artworkId: number,
+  options?: RequestInit,
+): Promise<ArtworkModerationResult> => {
+  return customFetch<ArtworkModerationResult>(
+    getAdminApproveArtworkUrl(artworkId),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getAdminApproveArtworkMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminApproveArtwork>>,
+    TError,
+    { artworkId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminApproveArtwork>>,
+  TError,
+  { artworkId: number },
+  TContext
+> => {
+  const mutationKey = ["adminApproveArtwork"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminApproveArtwork>>,
+    { artworkId: number }
+  > = (props) => {
+    const { artworkId } = props ?? {};
+
+    return adminApproveArtwork(artworkId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminApproveArtworkMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminApproveArtwork>>
+>;
+
+export type AdminApproveArtworkMutationError = ErrorType<void>;
+
+/**
+ * @summary Approve an artwork (admin only — alias for moderation endpoint)
+ */
+export const useAdminApproveArtwork = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminApproveArtwork>>,
+    TError,
+    { artworkId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminApproveArtwork>>,
+  TError,
+  { artworkId: number },
+  TContext
+> => {
+  return useMutation(getAdminApproveArtworkMutationOptions(options));
+};
+
+/**
+ * @summary Reject an artwork (admin only — alias for moderation endpoint)
+ */
+export const getAdminRejectArtworkUrl = (artworkId: number) => {
+  return `/api/admin/artworks/${artworkId}/reject`;
+};
+
+export const adminRejectArtwork = async (
+  artworkId: number,
+  options?: RequestInit,
+): Promise<ArtworkModerationResult> => {
+  return customFetch<ArtworkModerationResult>(
+    getAdminRejectArtworkUrl(artworkId),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getAdminRejectArtworkMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminRejectArtwork>>,
+    TError,
+    { artworkId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminRejectArtwork>>,
+  TError,
+  { artworkId: number },
+  TContext
+> => {
+  const mutationKey = ["adminRejectArtwork"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminRejectArtwork>>,
+    { artworkId: number }
+  > = (props) => {
+    const { artworkId } = props ?? {};
+
+    return adminRejectArtwork(artworkId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminRejectArtworkMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminRejectArtwork>>
+>;
+
+export type AdminRejectArtworkMutationError = ErrorType<void>;
+
+/**
+ * @summary Reject an artwork (admin only — alias for moderation endpoint)
+ */
+export const useAdminRejectArtwork = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminRejectArtwork>>,
+    TError,
+    { artworkId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminRejectArtwork>>,
+  TError,
+  { artworkId: number },
+  TContext
+> => {
+  return useMutation(getAdminRejectArtworkMutationOptions(options));
+};
+
+/**
  * @summary Delete an artwork (admin only)
  */
 export const getAdminDeleteArtworkUrl = (artworkId: number) => {
@@ -1946,6 +2209,81 @@ export function useAdminGetOrders<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getAdminGetOrdersQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List all styles including inactive (admin only)
+ */
+export const getAdminGetStylesUrl = () => {
+  return `/api/admin/styles`;
+};
+
+export const adminGetStyles = async (
+  options?: RequestInit,
+): Promise<Style[]> => {
+  return customFetch<Style[]>(getAdminGetStylesUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getAdminGetStylesQueryKey = () => {
+  return [`/api/admin/styles`] as const;
+};
+
+export const getAdminGetStylesQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminGetStyles>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminGetStyles>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getAdminGetStylesQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof adminGetStyles>>> = ({
+    signal,
+  }) => adminGetStyles({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminGetStyles>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminGetStylesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminGetStyles>>
+>;
+export type AdminGetStylesQueryError = ErrorType<void>;
+
+/**
+ * @summary List all styles including inactive (admin only)
+ */
+
+export function useAdminGetStyles<
+  TData = Awaited<ReturnType<typeof adminGetStyles>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminGetStyles>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminGetStylesQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
@@ -2210,6 +2548,81 @@ export const useAdminDeleteStyle = <
 > => {
   return useMutation(getAdminDeleteStyleMutationOptions(options));
 };
+
+/**
+ * @summary List all t-shirt models including inactive (admin only)
+ */
+export const getAdminGetModelsUrl = () => {
+  return `/api/admin/models`;
+};
+
+export const adminGetModels = async (
+  options?: RequestInit,
+): Promise<TshirtModel[]> => {
+  return customFetch<TshirtModel[]>(getAdminGetModelsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getAdminGetModelsQueryKey = () => {
+  return [`/api/admin/models`] as const;
+};
+
+export const getAdminGetModelsQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminGetModels>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminGetModels>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getAdminGetModelsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof adminGetModels>>> = ({
+    signal,
+  }) => adminGetModels({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminGetModels>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminGetModelsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminGetModels>>
+>;
+export type AdminGetModelsQueryError = ErrorType<void>;
+
+/**
+ * @summary List all t-shirt models including inactive (admin only)
+ */
+
+export function useAdminGetModels<
+  TData = Awaited<ReturnType<typeof adminGetModels>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminGetModels>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminGetModelsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary Create a t-shirt model (admin only)
