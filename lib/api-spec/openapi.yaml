@@ -3,20 +3,36 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: AI T-Shirt Store API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: session
+    description: Guest session management
+  - name: artworks
+    description: Artwork generation and management
+  - name: gallery
+    description: Public gallery
+  - name: styles
+    description: T-shirt design styles
+  - name: models
+    description: T-shirt models
+  - name: orders
+    description: Orders and checkout
+  - name: users
+    description: User management
+  - name: admin
+    description: Admin operations
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +40,590 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /session/init:
+    post:
+      operationId: initSession
+      tags: [session]
+      summary: Initialize or retrieve a guest session
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InitSessionBody"
+      responses:
+        "200":
+          description: Session ready
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GuestSession"
+
+  /me:
+    get:
+      operationId: getMe
+      tags: [users]
+      summary: Get current authenticated user profile
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Unauthorized
+
+  /me/artworks:
+    get:
+      operationId: getMyArtworks
+      tags: [artworks]
+      summary: Get current user's artworks
+      responses:
+        "200":
+          description: List of user's artworks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Artwork"
+
+  /generate:
+    post:
+      operationId: generateArtwork
+      tags: [artworks]
+      summary: Generate artwork using AI (guest or authenticated)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateArtworkBody"
+      responses:
+        "201":
+          description: Artwork generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Artwork"
+        "402":
+          description: Insufficient tokens
+        "400":
+          description: Invalid request
+
+  /refine:
+    post:
+      operationId: refineArtwork
+      tags: [artworks]
+      summary: Refine an existing artwork (authenticated only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefineArtworkBody"
+      responses:
+        "200":
+          description: Artwork refined
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Artwork"
+        "401":
+          description: Unauthorized
+        "402":
+          description: Insufficient tokens
+
+  /artworks/{artworkId}:
+    get:
+      operationId: getArtwork
+      tags: [artworks]
+      summary: Get a single artwork by ID
+      parameters:
+        - name: artworkId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Artwork
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Artwork"
+        "404":
+          description: Not found
+
+  /artworks/{artworkId}/share:
+    post:
+      operationId: shareArtwork
+      tags: [artworks]
+      summary: Share artwork in public gallery (authenticated only)
+      parameters:
+        - name: artworkId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Artwork submitted for moderation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Artwork"
+        "401":
+          description: Unauthorized
+
+  /artworks/{artworkId}/like:
+    post:
+      operationId: likeArtwork
+      tags: [artworks]
+      summary: Like an artwork (authenticated only)
+      parameters:
+        - name: artworkId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Like recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LikeResponse"
+        "401":
+          description: Unauthorized
+    delete:
+      operationId: unlikeArtwork
+      tags: [artworks]
+      summary: Remove like from artwork
+      parameters:
+        - name: artworkId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Like removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LikeResponse"
+        "401":
+          description: Unauthorized
+
+  /gallery:
+    get:
+      operationId: getGallery
+      tags: [gallery]
+      summary: Get public approved artworks, filterable by style
+      parameters:
+        - name: style
+          in: query
+          schema:
+            type: ["string", "null"]
+          description: Filter by style slug (null = all styles)
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [recent, popular]
+            default: recent
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Gallery artworks
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GalleryResponse"
+
+  /gallery/stats:
+    get:
+      operationId: getGalleryStats
+      tags: [gallery]
+      summary: Get gallery statistics by style
+      responses:
+        "200":
+          description: Gallery stats per style
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StyleStat"
+
+  /styles:
+    get:
+      operationId: getStyles
+      tags: [styles]
+      summary: List all active styles
+      responses:
+        "200":
+          description: List of styles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Style"
+
+  /models:
+    get:
+      operationId: getTshirtModels
+      tags: [models]
+      summary: List all t-shirt models
+      responses:
+        "200":
+          description: List of t-shirt models
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TshirtModel"
+
+  /checkout:
+    post:
+      operationId: createCheckout
+      tags: [orders]
+      summary: Create a Stripe Checkout session (authenticated only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCheckoutBody"
+      responses:
+        "200":
+          description: Checkout session created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutSession"
+        "401":
+          description: Unauthorized
+
+  /orders:
+    get:
+      operationId: getMyOrders
+      tags: [orders]
+      summary: Get current user's orders
+      responses:
+        "200":
+          description: List of orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Order"
+        "401":
+          description: Unauthorized
+
+  /webhooks/stripe:
+    post:
+      operationId: stripeWebhook
+      tags: [orders]
+      summary: Stripe webhook endpoint
+      responses:
+        "200":
+          description: Webhook processed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookResponse"
+
+  /admin/users:
+    get:
+      operationId: adminGetUsers
+      tags: [admin]
+      summary: List all users (admin only)
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+        "403":
+          description: Forbidden
+
+  /admin/users/{userId}/tokens:
+    patch:
+      operationId: adminAdjustTokens
+      tags: [admin]
+      summary: Adjust user token balance (admin only)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdjustTokensBody"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "403":
+          description: Forbidden
+
+  /admin/artworks:
+    get:
+      operationId: adminGetArtworks
+      tags: [admin]
+      summary: Get all artworks with moderation info (admin only)
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: ["string", "null"]
+            enum: [pending, approved, rejected, "null"]
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+      responses:
+        "200":
+          description: Artworks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Artwork"
+        "403":
+          description: Forbidden
+
+  /admin/artworks/{artworkId}/moderation:
+    patch:
+      operationId: adminModerateArtwork
+      tags: [admin]
+      summary: Approve or reject an artwork (admin only)
+      parameters:
+        - name: artworkId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ModerationBody"
+      responses:
+        "200":
+          description: Updated artwork
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Artwork"
+        "403":
+          description: Forbidden
+
+  /admin/artworks/{artworkId}:
+    delete:
+      operationId: adminDeleteArtwork
+      tags: [admin]
+      summary: Delete an artwork (admin only)
+      parameters:
+        - name: artworkId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "403":
+          description: Forbidden
+
+  /admin/orders:
+    get:
+      operationId: adminGetOrders
+      tags: [admin]
+      summary: List all orders (admin only)
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+      responses:
+        "200":
+          description: Orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Order"
+        "403":
+          description: Forbidden
+
+  /admin/styles:
+    post:
+      operationId: adminCreateStyle
+      tags: [admin]
+      summary: Create a new style (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertStyleBody"
+      responses:
+        "201":
+          description: Style created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Style"
+        "403":
+          description: Forbidden
+
+  /admin/styles/{styleId}:
+    patch:
+      operationId: adminUpdateStyle
+      tags: [admin]
+      summary: Update a style (admin only)
+      parameters:
+        - name: styleId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertStyleBody"
+      responses:
+        "200":
+          description: Updated style
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Style"
+        "403":
+          description: Forbidden
+    delete:
+      operationId: adminDeleteStyle
+      tags: [admin]
+      summary: Delete a style (admin only)
+      parameters:
+        - name: styleId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "403":
+          description: Forbidden
+
+  /admin/models:
+    post:
+      operationId: adminCreateModel
+      tags: [admin]
+      summary: Create a t-shirt model (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertModelBody"
+      responses:
+        "201":
+          description: Model created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TshirtModel"
+        "403":
+          description: Forbidden
+
+  /admin/models/{modelId}:
+    patch:
+      operationId: adminUpdateModel
+      tags: [admin]
+      summary: Update a t-shirt model (admin only)
+      parameters:
+        - name: modelId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertModelBody"
+      responses:
+        "200":
+          description: Updated model
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TshirtModel"
+        "403":
+          description: Forbidden
+    delete:
+      operationId: adminDeleteModel
+      tags: [admin]
+      summary: Delete a t-shirt model (admin only)
+      parameters:
+        - name: modelId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "403":
+          description: Forbidden
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +634,359 @@ components:
       required:
         - status
 
+    InitSessionBody:
+      type: object
+      properties:
+        sessionId:
+          type: ["string", "null"]
+
+    GuestSession:
+      type: object
+      properties:
+        sessionId:
+          type: string
+        tokenBalance:
+          type: integer
+        expiresAt:
+          type: string
+      required:
+        - sessionId
+        - tokenBalance
+        - expiresAt
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        firebaseUid:
+          type: string
+        email:
+          type: string
+        displayName:
+          type: ["string", "null"]
+        photoUrl:
+          type: ["string", "null"]
+        role:
+          type: string
+          enum: [user, admin]
+        tokenBalance:
+          type: integer
+        createdAt:
+          type: string
+      required:
+        - id
+        - firebaseUid
+        - email
+        - role
+        - tokenBalance
+        - createdAt
+
+    Artwork:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: ["integer", "null"]
+        guestSessionId:
+          type: ["string", "null"]
+        prompt:
+          type: string
+        enrichedPrompt:
+          type: ["string", "null"]
+        styleSlug:
+          type: ["string", "null"]
+        styleLabel:
+          type: ["string", "null"]
+        imageUrl:
+          type: string
+        isShared:
+          type: boolean
+        moderationStatus:
+          type: ["string", "null"]
+          enum: [pending, approved, rejected, "null"]
+        likes:
+          type: integer
+        views:
+          type: integer
+        upscaled:
+          type: boolean
+        authorName:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required:
+        - id
+        - prompt
+        - imageUrl
+        - isShared
+        - likes
+        - views
+        - upscaled
+        - createdAt
+
+    GenerateArtworkBody:
+      type: object
+      properties:
+        prompt:
+          type: string
+        styleSlug:
+          type: ["string", "null"]
+        sessionId:
+          type: ["string", "null"]
+      required:
+        - prompt
+
+    RefineArtworkBody:
+      type: object
+      properties:
+        artworkId:
+          type: integer
+        refinementPrompt:
+          type: string
+      required:
+        - artworkId
+        - refinementPrompt
+
+    LikeResponse:
+      type: object
+      properties:
+        likes:
+          type: integer
+        liked:
+          type: boolean
+      required:
+        - likes
+        - liked
+
+    GalleryResponse:
+      type: object
+      properties:
+        artworks:
+          type: array
+          items:
+            $ref: "#/components/schemas/Artwork"
+        total:
+          type: integer
+        page:
+          type: integer
+        hasMore:
+          type: boolean
+      required:
+        - artworks
+        - total
+        - page
+        - hasMore
+
+    StyleStat:
+      type: object
+      properties:
+        styleSlug:
+          type: string
+        styleLabel:
+          type: string
+        count:
+          type: integer
+      required:
+        - styleSlug
+        - styleLabel
+        - count
+
+    Style:
+      type: object
+      properties:
+        id:
+          type: integer
+        slug:
+          type: string
+        label:
+          type: string
+        description:
+          type: ["string", "null"]
+        icon:
+          type: ["string", "null"]
+        promptParams:
+          type: string
+        active:
+          type: boolean
+        sortOrder:
+          type: integer
+      required:
+        - id
+        - slug
+        - label
+        - promptParams
+        - active
+        - sortOrder
+
+    TshirtModel:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        mockupUrl:
+          type: ["string", "null"]
+        availableColors:
+          type: array
+          items:
+            type: string
+        active:
+          type: boolean
+        price:
+          type: number
+      required:
+        - id
+        - name
+        - availableColors
+        - active
+        - price
+
+    Order:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        artworkId:
+          type: integer
+        modelId:
+          type: integer
+        color:
+          type: string
+        size:
+          type: string
+        stripeSessionId:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [pending, paid, fulfilled, cancelled]
+        masterized:
+          type: boolean
+        totalPrice:
+          type: number
+        createdAt:
+          type: string
+        artwork:
+          $ref: "#/components/schemas/Artwork"
+      required:
+        - id
+        - userId
+        - artworkId
+        - modelId
+        - color
+        - size
+        - status
+        - masterized
+        - totalPrice
+        - createdAt
+        - artwork
+
+    CreateCheckoutBody:
+      type: object
+      properties:
+        artworkId:
+          type: integer
+        modelId:
+          type: integer
+        color:
+          type: string
+        size:
+          type: string
+      required:
+        - artworkId
+        - modelId
+        - color
+        - size
+
+    CheckoutSession:
+      type: object
+      properties:
+        url:
+          type: string
+        sessionId:
+          type: string
+      required:
+        - url
+        - sessionId
+
+    WebhookResponse:
+      type: object
+      properties:
+        received:
+          type: boolean
+      required:
+        - received
+
+    AdjustTokensBody:
+      type: object
+      properties:
+        delta:
+          type: integer
+        reason:
+          type: ["string", "null"]
+      required:
+        - delta
+
+    ModerationBody:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [approved, rejected]
+        reason:
+          type: ["string", "null"]
+      required:
+        - status
+
+    UpsertStyleBody:
+      type: object
+      properties:
+        slug:
+          type: string
+        label:
+          type: string
+        description:
+          type: ["string", "null"]
+        icon:
+          type: ["string", "null"]
+        promptParams:
+          type: string
+        active:
+          type: boolean
+        sortOrder:
+          type: integer
+      required:
+        - slug
+        - label
+        - promptParams
+        - active
+        - sortOrder
+
+    UpsertModelBody:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        mockupUrl:
+          type: ["string", "null"]
+        availableColors:
+          type: array
+          items:
+            type: string
+        active:
+          type: boolean
+        price:
+          type: number
+      required:
+        - name
+        - availableColors
+        - active
+        - price
