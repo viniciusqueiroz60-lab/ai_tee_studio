@@ -10,6 +10,8 @@ interface AuthContextValue {
   idToken: string | null;
   tokenBalance: number | null;
   role: "user" | "admin" | null;
+  /** True once the auth flow (including guest-session migration) has fully settled for the current user. */
+  migrationSettled: boolean;
   refreshUser: () => Promise<void>;
 }
 
@@ -19,6 +21,7 @@ const AuthContext = createContext<AuthContextValue>({
   idToken: null,
   tokenBalance: null,
   role: null,
+  migrationSettled: true,
   refreshUser: async () => {},
 });
 
@@ -28,6 +31,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [idToken, setIdToken] = useState<string | null>(null);
   const [tokenBalance, setTokenBalance] = useState<number | null>(null);
   const [role, setRole] = useState<"user" | "admin" | null>(null);
+  // Becomes false while the onAuth handler is running (including migration); true once settled.
+  const [migrationSettled, setMigrationSettled] = useState(true);
 
   async function refreshUser() {
     const token = await getIdToken();
@@ -52,10 +57,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const unsub = onAuth(async (firebaseUser) => {
       setUser(firebaseUser);
       if (firebaseUser) {
-        const token = await firebaseUser.getIdToken();
-        setIdToken(token);
-        const sessionId = localStorage.getItem(SESSION_KEY);
+        // Mark settlement as pending so dependents (e.g. pending conversion actions)
+        // wait until the full auth flow — including guest-session migration — is complete.
+        setMigrationSettled(false);
         try {
+          const token = await firebaseUser.getIdToken();
+          setIdToken(token);
+          const sessionId = localStorage.getItem(SESSION_KEY);
           const res = await fetch(`${BASE}/api/me`, {
             headers: { Authorization: `Bearer ${token}` },
           });
@@ -89,10 +97,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
           }
         } catch { /* token refresh or /me fetch failed — user stays logged out */ }
+        finally {
+          // Signal that the full auth + migration flow is done; it is now safe for
+          // components to resume ownership-dependent actions (share, order, refine).
+          setMigrationSettled(true);
+        }
       } else {
         setIdToken(null);
         setTokenBalance(null);
         setRole(null);
+        setMigrationSettled(true);
       }
       setLoading(false);
     });
@@ -100,7 +114,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, idToken, tokenBalance, role, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading, idToken, tokenBalance, role, migrationSettled, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

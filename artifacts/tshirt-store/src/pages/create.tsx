@@ -188,7 +188,7 @@ function GuestConversionModal({
 }
 
 export default function CreatePage() {
-  const { user, tokenBalance, refreshUser } = useAuth();
+  const { user, tokenBalance, migrationSettled, refreshUser } = useAuth();
   const { session, refreshSession } = useGuestSession();
   const [, navigate] = useLocation();
 
@@ -213,16 +213,18 @@ export default function CreatePage() {
     if (style) setSelectedStyle(style);
   }, []);
 
-  // Resume the pending action once the user is logged in after inline auth
+  // Resume the pending action only after the full auth + migration flow has settled.
+  // Waiting for migrationSettled prevents share/order from firing before artwork ownership
+  // has been transferred from the guest session to the authenticated user.
   useEffect(() => {
-    if (!user || !pendingConversionAction || !artwork) return;
+    if (!user || !migrationSettled || !pendingConversionAction || !artwork) return;
     const action = pendingConversionAction;
     setPendingConversionAction(null);
     if (action === "share") setShareConfirmOpen(true);
     else if (action === "order") navigate(`/product/${artwork.id}`);
     // "refine": user is now logged in → the refine textarea becomes visible automatically
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, pendingConversionAction]);
+  }, [user, migrationSettled, pendingConversionAction]);
 
   const balance = user ? (tokenBalance ?? 0) : (session?.tokenBalance ?? 0);
   const hasTokens = balance > 0;
