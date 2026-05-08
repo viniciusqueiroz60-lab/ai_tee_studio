@@ -11,11 +11,12 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
-  Heart, ShoppingCart, Loader2, ArrowLeft, Share2, Lock, AlertCircle
+  Heart, ShoppingCart, Loader2, ArrowLeft, Lock, AlertCircle
 } from "lucide-react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
+import { TshirtMockup } from "@/components/TshirtMockup";
 
 const SIZES = ["PP", "P", "M", "G", "GG", "XGG"];
 
@@ -149,17 +150,18 @@ export default function ProductPage() {
         </Button>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          {/* Artwork */}
+          {/* T-Shirt Mockup */}
           <div>
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="relative rounded-2xl overflow-hidden border border-border shadow-2xl aspect-square"
+              className="relative"
             >
-              <img
-                src={artwork.imageUrl}
-                alt={artwork.prompt}
-                className="w-full h-full object-cover"
+              <TshirtMockup
+                artworkUrl={artwork.imageUrl}
+                color={selectedColor ?? "white"}
+                mockupUrl={currentModel?.mockupUrl}
+                altText={artwork.prompt}
               />
               {artwork.styleLabel && (
                 <div className="absolute top-4 left-4">

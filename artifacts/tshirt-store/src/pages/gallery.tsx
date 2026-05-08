@@ -279,9 +279,12 @@ export default function GalleryPage() {
                       alt={artwork.prompt}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                       <div className="absolute bottom-0 left-0 right-0 p-3">
-                        <p className="text-white text-xs line-clamp-2 mb-2">{artwork.prompt}</p>
+                        <p className="text-white text-xs line-clamp-2 mb-1.5">{artwork.prompt}</p>
+                        {artwork.authorName && (
+                          <p className="text-white/60 text-xs mb-1.5">por {artwork.authorName}</p>
+                        )}
                         <div className="flex items-center justify-between">
                           {artwork.styleLabel && (
                             <Badge variant="secondary" className="bg-white/20 text-white border-0 text-xs">

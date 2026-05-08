@@ -101,6 +101,21 @@ router.patch("/admin/artworks/:artworkId/moderation", optionalAuth, requireAdmin
   });
 });
 
+// Convenience aliases matching documented API contract
+router.post("/admin/artworks/:artworkId/approve", optionalAuth, requireAdmin, async (req: AuthenticatedRequest, res): Promise<void> => {
+  const artworkId = parseInt(Array.isArray(req.params.artworkId) ? req.params.artworkId[0] : req.params.artworkId, 10);
+  const [updated] = await db.update(artworksTable).set({ moderationStatus: "approved" }).where(eq(artworksTable.id, artworkId)).returning();
+  if (!updated) { res.status(404).json({ error: "Not found" }); return; }
+  res.json({ id: updated.id, moderationStatus: updated.moderationStatus });
+});
+
+router.post("/admin/artworks/:artworkId/reject", optionalAuth, requireAdmin, async (req: AuthenticatedRequest, res): Promise<void> => {
+  const artworkId = parseInt(Array.isArray(req.params.artworkId) ? req.params.artworkId[0] : req.params.artworkId, 10);
+  const [updated] = await db.update(artworksTable).set({ moderationStatus: "rejected" }).where(eq(artworksTable.id, artworkId)).returning();
+  if (!updated) { res.status(404).json({ error: "Not found" }); return; }
+  res.json({ id: updated.id, moderationStatus: updated.moderationStatus });
+});
+
 router.delete("/admin/artworks/:artworkId", optionalAuth, requireAdmin, async (req: AuthenticatedRequest, res): Promise<void> => {
   const artworkId = parseInt(Array.isArray(req.params.artworkId) ? req.params.artworkId[0] : req.params.artworkId, 10);
   await db.delete(artworksTable).where(eq(artworksTable.id, artworkId));
