@@ -642,23 +642,17 @@ export default function CreatePage() {
           </div>
         </div>
 
-        {/* ── Sua Camiseta ── shown on all screen sizes when artwork exists */}
-        {artwork && !generating && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35 }}
-            className="mt-5 bg-card rounded-2xl border border-border shadow-sm overflow-hidden"
-          >
-            <div className="grid grid-cols-[1fr_1fr] md:grid-cols-[1fr_1.2fr]">
+        {/* ── Sua Camiseta ── always visible */}
+        <div className="mt-5 bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
+          <div className="grid grid-cols-[1fr_1fr] md:grid-cols-[1fr_1.2fr]">
               {/* Left: T-shirt mockup */}
               <div className="p-3 bg-muted/20 flex items-center justify-center">
                 <TshirtMockup
                   ref={mockupRef}
-                  artworkUrl={artwork.imageUrl}
+                  artworkUrl={artwork?.imageUrl ?? null}
                   color={selectedColor}
                   mockupUrl={models?.[0]?.mockupUrl ?? null}
-                  altText={artwork.prompt}
+                  altText={artwork?.prompt}
                 />
               </div>
 
@@ -730,8 +724,7 @@ export default function CreatePage() {
                 </div>
               </div>
             </div>
-          </motion.div>
-        )}
+        </div>
       </div>
 
       {conversionModal && (

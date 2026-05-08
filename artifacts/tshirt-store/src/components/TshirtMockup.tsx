@@ -3,7 +3,7 @@ import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface TshirtMockupProps {
-  artworkUrl: string;
+  artworkUrl?: string | null;
   color: string;
   mockupUrl?: string | null;
   altText?: string;
@@ -248,11 +248,14 @@ export const TshirtMockup = forwardRef<TshirtMockupHandle, TshirtMockupProps>(
 
     const render = useCallback(async () => {
       const canvas = canvasRef.current;
-      if (!canvas || !artworkUrl) return;
+      if (!canvas) return;
 
       setRendered(false);
       try {
-        if (mockupUrl) {
+        if (!artworkUrl) {
+          // No artwork yet — draw an empty shirt as a placeholder mockup
+          drawFallbackShirt(canvas, hexColor, isDark);
+        } else if (mockupUrl) {
           await drawWithModelTemplate(canvas, artworkUrl, mockupUrl, hexColor, isDark);
         } else {
           await drawWithGeneratedShirt(canvas, artworkUrl, hexColor, isDark);
