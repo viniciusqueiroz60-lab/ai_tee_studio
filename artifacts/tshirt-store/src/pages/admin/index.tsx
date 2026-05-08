@@ -321,7 +321,7 @@ export default function AdminPage() {
           {/* Styles */}
           <TabsContent value="styles">
             <div className="flex justify-end mb-4">
-              <Button className="gap-2" onClick={() => setStyleForm({})}>
+              <Button className="gap-2" onClick={() => setStyleForm({ active: true, sortOrder: styles.length + 1, promptParams: "" })}>
                 <Plus className="w-4 h-4" /> Novo estilo
               </Button>
             </div>
@@ -348,6 +348,20 @@ export default function AdminPage() {
                   <div className="space-y-1.5">
                     <Label>Ícone (emoji)</Label>
                     <Input value={styleForm.icon ?? ""} onChange={(e) => setStyleForm((p) => ({ ...p, icon: e.target.value }))} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Ordem de exibição</Label>
+                    <Input type="number" value={styleForm.sortOrder ?? ""} onChange={(e) => setStyleForm((p) => ({ ...p, sortOrder: parseInt(e.target.value) || 0 }))} />
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <input
+                      id="style-active"
+                      type="checkbox"
+                      checked={styleForm.active ?? true}
+                      onChange={(e) => setStyleForm((p) => ({ ...p, active: e.target.checked }))}
+                      className="w-4 h-4 rounded"
+                    />
+                    <Label htmlFor="style-active">Ativo</Label>
                   </div>
                   <div className="col-span-2 flex gap-3">
                     <Button onClick={saveStyle}>Salvar</Button>
@@ -379,7 +393,7 @@ export default function AdminPage() {
           {/* Models */}
           <TabsContent value="models">
             <div className="flex justify-end mb-4">
-              <Button className="gap-2" onClick={() => setModelForm({})}>
+              <Button className="gap-2" onClick={() => setModelForm({ active: true, availableColors: [], price: 0 })}>
                 <Plus className="w-4 h-4" /> Novo modelo
               </Button>
             </div>
@@ -405,6 +419,16 @@ export default function AdminPage() {
                       value={(modelForm.availableColors ?? []).join(", ")}
                       onChange={(e) => setModelForm((p) => ({ ...p, availableColors: e.target.value.split(",").map((c) => c.trim()).filter(Boolean) }))}
                     />
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <input
+                      id="model-active"
+                      type="checkbox"
+                      checked={modelForm.active ?? true}
+                      onChange={(e) => setModelForm((p) => ({ ...p, active: e.target.checked }))}
+                      className="w-4 h-4 rounded"
+                    />
+                    <Label htmlFor="model-active">Ativo</Label>
                   </div>
                   <div className="col-span-2 flex gap-3">
                     <Button onClick={saveModel}>Salvar</Button>

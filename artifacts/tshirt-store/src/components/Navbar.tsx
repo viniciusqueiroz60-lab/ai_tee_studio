@@ -16,7 +16,7 @@ import { Zap, ShoppingBag, Image, LayoutGrid, Shield, LogOut, User, Menu } from 
 import { useState } from "react";
 
 export function Navbar() {
-  const { user, tokenBalance, loading } = useAuth();
+  const { user, tokenBalance, loading, role } = useAuth();
   const { session } = useGuestSession();
   const [location] = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -101,7 +101,7 @@ export function Navbar() {
                         Pedidos
                       </Link>
                     </DropdownMenuItem>
-                    {user.email?.includes("admin") && (
+                    {role === "admin" && (
                       <>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem asChild>

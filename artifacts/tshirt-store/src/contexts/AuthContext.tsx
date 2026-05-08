@@ -9,6 +9,7 @@ interface AuthContextValue {
   loading: boolean;
   idToken: string | null;
   tokenBalance: number | null;
+  role: "user" | "admin" | null;
   refreshUser: () => Promise<void>;
 }
 
@@ -17,6 +18,7 @@ const AuthContext = createContext<AuthContextValue>({
   loading: true,
   idToken: null,
   tokenBalance: null,
+  role: null,
   refreshUser: async () => {},
 });
 
@@ -25,6 +27,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [idToken, setIdToken] = useState<string | null>(null);
   const [tokenBalance, setTokenBalance] = useState<number | null>(null);
+  const [role, setRole] = useState<"user" | "admin" | null>(null);
 
   async function refreshUser() {
     const token = await getIdToken();
@@ -37,6 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (res.ok) {
           const data = await res.json();
           setTokenBalance(data.tokenBalance);
+          setRole(data.role === "admin" ? "admin" : "user");
         }
       } catch {
         setTokenBalance(null);
@@ -58,6 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (res.ok) {
             const data = await res.json();
             setTokenBalance(data.tokenBalance);
+            setRole(data.role === "admin" ? "admin" : "user");
           }
           if (sessionId) {
             await fetch(`${BASE}/api/me/migrate-session`, {
@@ -73,6 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setIdToken(null);
         setTokenBalance(null);
+        setRole(null);
       }
       setLoading(false);
     });
@@ -80,7 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, idToken, tokenBalance, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading, idToken, tokenBalance, role, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );
