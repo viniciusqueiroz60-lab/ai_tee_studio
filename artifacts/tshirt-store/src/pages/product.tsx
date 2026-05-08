@@ -79,6 +79,7 @@ export default function ProductPage() {
         await apiJson(`/artworks/${artworkId}/like`, { method: "POST" });
       }
     } catch {
+      // Optimistic update failed — roll back like state and count
       setLiked((l) => !l);
       setLikesCount((c) => liked ? c + 1 : c - 1);
     }

@@ -88,7 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               }
             }
           }
-        } catch {}
+        } catch { /* token refresh or /me fetch failed — user stays logged out */ }
       } else {
         setIdToken(null);
         setTokenBalance(null);

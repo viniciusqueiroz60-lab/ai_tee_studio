@@ -40,7 +40,7 @@ interface TshirtModel {
 }
 
 export default function AdminPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, role } = useAuth();
   const [, navigate] = useLocation();
   const { toast } = useToast();
 
@@ -61,9 +61,9 @@ export default function AdminPage() {
   }, [user, loading, navigate]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || role !== "admin") return;
     loadAll();
-  }, [user]);
+  }, [user, role]);
 
   async function loadAll() {
     setLoadingData(true);
