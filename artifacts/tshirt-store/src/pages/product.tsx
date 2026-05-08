@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useRoute, useLocation } from "wouter";
-import { useGetArtwork, useGetTshirtModels, useLikeArtwork, useUnlikeArtwork } from "@workspace/api-client-react";
+import { useGetArtwork, useGetTshirtModels } from "@workspace/api-client-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiJson } from "@/lib/api";
 import { Button } from "@/components/ui/button";

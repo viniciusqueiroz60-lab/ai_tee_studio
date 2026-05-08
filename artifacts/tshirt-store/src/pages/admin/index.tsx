@@ -104,11 +104,12 @@ export default function AdminPage() {
   async function adjustTokens(userId: number) {
     const delta = parseInt(tokenDelta[userId] ?? "0", 10);
     if (isNaN(delta)) return;
-    await apiJson(`/admin/users/${userId}/tokens`, {
+    const updated = await apiJson<AdminUser>(`/admin/users/${userId}/tokens`, {
       method: "PATCH",
       body: JSON.stringify({ delta, reason: "Admin adjustment" }),
     });
-    setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, tokenBalance: u.tokenBalance + delta } : u));
+    // Use server-returned balance so client stays consistent with server-side clamp-to-zero
+    setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, tokenBalance: updated.tokenBalance } : u));
     setTokenDelta((prev) => ({ ...prev, [userId]: "" }));
     toast({ title: "Tokens ajustados" });
   }
