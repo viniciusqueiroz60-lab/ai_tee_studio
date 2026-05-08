@@ -65,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setRole(data.role === "admin" ? "admin" : "user");
           }
           if (sessionId) {
-            await fetch(`${BASE}/api/me/migrate-session`, {
+            const migRes = await fetch(`${BASE}/api/me/migrate-session`, {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
@@ -73,6 +73,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               },
               body: JSON.stringify({ sessionId }),
             });
+            if (migRes.ok) {
+              const migData = await migRes.json();
+              if (migData.migrated && migData.tokensAdded > 0) {
+                // Re-fetch /me to reflect migrated token balance immediately
+                const meRes = await fetch(`${BASE}/api/me`, {
+                  headers: { Authorization: `Bearer ${token}` },
+                });
+                if (meRes.ok) {
+                  const meData = await meRes.json();
+                  setTokenBalance(meData.tokenBalance);
+                  setRole(meData.role === "admin" ? "admin" : "user");
+                }
+              }
+            }
           }
         } catch {}
       } else {

@@ -1,7 +1,7 @@
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { GuestSessionProvider } from "@/contexts/GuestSessionContext";
 import { Navbar } from "@/components/Navbar";
 import NotFound from "@/pages/not-found";
@@ -13,6 +13,13 @@ import ProductPage from "@/pages/product";
 import OrdersPage from "@/pages/orders";
 import MyArtworksPage from "@/pages/my-artworks";
 import AdminPage from "@/pages/admin/index";
+
+function AdminRoute() {
+  const { role, loading } = useAuth();
+  if (loading) return null;
+  if (role !== "admin") return <Redirect to="/" />;
+  return <AdminPage />;
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -39,7 +46,7 @@ function AppRoutes() {
           <Route path="/product/:id" component={ProductPage} />
           <Route path="/orders" component={OrdersPage} />
           <Route path="/my-artworks" component={MyArtworksPage} />
-          <Route path="/admin" component={AdminPage} />
+          <Route path="/admin" component={AdminRoute} />
           <Route component={NotFound} />
         </Switch>
       </main>
