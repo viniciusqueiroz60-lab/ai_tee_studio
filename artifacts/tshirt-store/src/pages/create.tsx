@@ -211,6 +211,8 @@ export default function CreatePage() {
     const params = new URLSearchParams(window.location.search);
     const style = params.get("style");
     if (style) setSelectedStyle(style);
+    const p = params.get("prompt");
+    if (p) setPrompt(p);
   }, []);
 
   // Resume the pending action only after the full auth + migration flow has settled.
@@ -304,244 +306,220 @@ export default function CreatePage() {
   }
 
   return (
-    <div className="min-h-screen py-8">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-2">
-            <h1 className="text-3xl font-black">Criar Design</h1>
-            <Badge variant={hasTokens ? "default" : "destructive"} className="gap-1.5 text-sm">
-              <Zap className="w-3.5 h-3.5" />
-              {balance} {balance === 1 ? "token" : "tokens"}
-            </Badge>
-          </div>
-          <p className="text-muted-foreground">
-            Descreva sua ideia e nossa IA cria um design único para sua camiseta
-          </p>
-        </div>
+    <div className="min-h-screen">
+      {/* Prompt section */}
+      <section className="px-4 pt-4 pb-0">
+        <h1 className="font-display text-2xl mb-1 text-foreground">Criar Design</h1>
+        <p className="text-xs text-muted-foreground mb-3">
+          Descreva sua ideia e nossa IA cria para você
+        </p>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Left: controls */}
-          <div className="space-y-6">
-            {/* Style picker */}
-            {styles && styles.length > 0 && (
-              <div>
-                <label className="text-sm font-semibold mb-3 block">Estilo Artístico</label>
-                <div className="grid grid-cols-5 gap-2">
-                  {styles.map((style) => (
-                    <button
-                      key={style.slug}
-                      onClick={() => setSelectedStyle(selectedStyle === style.slug ? null : style.slug)}
-                      className={`p-2.5 rounded-xl border-2 text-center transition-all ${
-                        selectedStyle === style.slug
-                          ? "border-primary bg-primary/10 shadow-sm"
-                          : "border-border hover:border-primary/40 bg-card"
-                      }`}
-                      title={style.label}
-                    >
-                      <div className="text-2xl">{STYLE_EMOJIS[style.slug] ?? style.icon ?? "🎨"}</div>
-                      <div className="text-xs mt-1 leading-tight text-muted-foreground line-clamp-1">
-                        {style.label.split(" ")[0]}
+        {error && (
+          <Alert variant="destructive" className="mb-3 py-2">
+            <AlertCircle className="w-4 h-4" />
+            <AlertDescription className="text-sm">{error}</AlertDescription>
+          </Alert>
+        )}
+
+        {!hasTokens && (
+          <Alert className="mb-3 py-2">
+            <Lock className="w-4 h-4" />
+            <AlertDescription className="text-sm">
+              Tokens esgotados.{" "}
+              <Link href="/auth" className="font-semibold underline">Cadastre-se</Link>{" "}
+              para ganhar mais.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        <Textarea
+          placeholder="Ex: um dragão japonês entre flores de cerejeira..."
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          className="min-h-[110px] text-sm resize-none bg-card border-border focus:border-primary"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleGenerate();
+          }}
+        />
+
+        <button
+          onClick={handleGenerate}
+          disabled={generating || !prompt.trim() || !hasTokens}
+          className="w-full mt-3 bg-primary text-primary-foreground rounded-lg py-3 text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed active:opacity-90 transition-opacity"
+        >
+          {generating ? (
+            <><Loader2 className="w-4 h-4 animate-spin" /> Gerando com IA...</>
+          ) : (
+            <><Wand2 className="w-4 h-4" /> Gerar Design</>
+          )}
+        </button>
+      </section>
+
+      {/* Style picker (when no artwork yet) */}
+      {!artwork && !generating && styles && styles.length > 0 && (
+        <section className="px-4 mt-5">
+          <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">Estilo</p>
+          <div className="flex flex-wrap gap-2">
+            {styles.map((style) => (
+              <button
+                key={style.slug}
+                onClick={() => setSelectedStyle(selectedStyle === style.slug ? null : style.slug)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs border transition-all ${
+                  selectedStyle === style.slug
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-card text-muted-foreground border-border"
+                }`}
+              >
+                <span>{STYLE_EMOJIS[style.slug] ?? style.icon ?? "🎨"}</span>
+                {style.label}
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Creation grid — shown when generating or artwork exists */}
+      {(artwork || generating) && (
+        <section className="px-4 mt-5">
+          <div className="grid gap-4" style={{ gridTemplateColumns: "1.5fr 1fr" }}>
+            {/* Left: preview card */}
+            <div className="bg-card rounded-xl p-3 border border-border shadow-sm">
+              <AnimatePresence mode="wait">
+                {generating ? (
+                  <motion.div
+                    key="generating"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="aspect-square rounded-lg bg-primary/5 border-2 border-dashed border-primary/30 flex flex-col items-center justify-center gap-3"
+                  >
+                    <div className="relative">
+                      <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
+                        <Wand2 className="w-6 h-6 text-primary animate-pulse" />
                       </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Prompt */}
-            <div>
-              <label className="text-sm font-semibold mb-2 block">Descreva seu design</label>
-              <Textarea
-                placeholder="Ex: um dragão japonês entre flores de cerejeira, estilo aquarela..."
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                className="min-h-[120px] text-base resize-none"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleGenerate();
-                }}
-              />
-              <p className="text-xs text-muted-foreground mt-1.5">
-                Ctrl+Enter para gerar
-              </p>
-            </div>
-
-            {error && (
-              <Alert variant="destructive">
-                <AlertCircle className="w-4 h-4" />
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-
-            {!hasTokens && (
-              <Alert>
-                <Lock className="w-4 h-4" />
-                <AlertDescription>
-                  Seus tokens gratuitos acabaram.{" "}
-                  <Link href="/auth" className="font-semibold underline">
-                    Cadastre-se
-                  </Link>{" "}
-                  para ganhar mais tokens.
-                </AlertDescription>
-              </Alert>
-            )}
-
-            <Button
-              onClick={handleGenerate}
-              disabled={generating || !prompt.trim() || !hasTokens}
-              className="w-full h-12 text-base gap-2"
-            >
-              {generating ? (
-                <><Loader2 className="w-5 h-5 animate-spin" /> Gerando com IA...</>
-              ) : (
-                <><Wand2 className="w-5 h-5" /> Gerar Design</>
-              )}
-            </Button>
-
-            {/* Refinement */}
-            {artwork && (
-              <div className="space-y-3">
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-border" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-3 text-muted-foreground font-semibold">
-                      Refinar Design
-                    </span>
-                  </div>
-                </div>
-
-                {!user ? (
-                  <div className="text-center p-4 rounded-xl border-2 border-dashed border-border">
-                    <Lock className="w-5 h-5 mx-auto mb-2 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground mb-3">
-                      Entre para refinar seu design com IA
-                    </p>
-                    <Button variant="outline" size="sm" onClick={() => setConversionModal("refine")}>
-                      Entrar / Cadastrar
-                    </Button>
-                  </div>
-                ) : (
-                  <>
-                    <Textarea
-                      placeholder="Ex: adicione mais cores, mude o fundo para preto..."
-                      value={refinementPrompt}
-                      onChange={(e) => setRefinementPrompt(e.target.value)}
-                      className="min-h-[80px] resize-none"
-                    />
-                    <Button
-                      onClick={handleRefine}
-                      disabled={refining || !refinementPrompt.trim()}
-                      variant="outline"
-                      className="w-full gap-2"
-                    >
-                      {refining ? (
-                        <><Loader2 className="w-4 h-4 animate-spin" /> Refinando...</>
-                      ) : (
-                        <><RefreshCw className="w-4 h-4" /> Refinar</>
-                      )}
-                    </Button>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Right: preview */}
-          <div>
-            <AnimatePresence mode="wait">
-              {generating ? (
-                <motion.div
-                  key="generating"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="aspect-square rounded-2xl border-2 border-dashed border-primary/40 bg-primary/5 flex flex-col items-center justify-center gap-4"
-                >
-                  <div className="relative">
-                    <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center">
-                      <Wand2 className="w-8 h-8 text-primary animate-pulse" />
+                      <div className="absolute inset-0 rounded-full border-2 border-primary/30 animate-ping" />
                     </div>
-                    <div className="absolute inset-0 rounded-full border-2 border-primary/30 animate-ping" />
-                  </div>
-                  <div className="text-center">
-                    <p className="font-semibold text-primary">Gerando com Gemini AI...</p>
-                    <p className="text-sm text-muted-foreground mt-1">Isso pode levar alguns segundos</p>
-                  </div>
-                </motion.div>
-              ) : artwork ? (
-                <motion.div
-                  key={artwork.id}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.3 }}
-                  className="space-y-4"
-                >
-                  <div className="relative aspect-square rounded-2xl overflow-hidden border border-border shadow-xl">
-                    <img
-                      src={artwork.imageUrl}
-                      alt={artwork.prompt}
-                      className="w-full h-full object-cover"
-                    />
-                    {artwork.styleLabel && (
-                      <div className="absolute top-3 right-3">
-                        <Badge variant="secondary" className="bg-black/50 text-white border-white/20 backdrop-blur-sm">
-                          {artwork.styleLabel}
-                        </Badge>
-                      </div>
-                    )}
-                  </div>
+                    <p className="text-xs text-primary font-medium text-center px-2">Gerando...</p>
+                  </motion.div>
+                ) : artwork ? (
+                  <motion.div
+                    key={artwork.id}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <div className="aspect-square rounded-lg overflow-hidden">
+                      <img
+                        src={artwork.imageUrl}
+                        alt={artwork.prompt}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  </motion.div>
+                ) : null}
+              </AnimatePresence>
 
-                  {/* Actions */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <Button
-                      variant="outline"
-                      className="gap-2"
-                      onClick={handleShare}
-                      disabled={sharing || shared}
-                    >
-                      {sharing ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Share2 className="w-4 h-4" />
-                      )}
-                      {shared ? "Compartilhado!" : "Compartilhar"}
-                    </Button>
-                    <Button className="gap-2" onClick={handleOrder}>
-                      <ShoppingCart className="w-4 h-4" />
-                      Pedir camiseta
-                    </Button>
-                  </div>
-
-                  <Button
-                    variant="ghost"
-                    className="w-full gap-2 text-muted-foreground"
+              {/* Icon action buttons */}
+              {artwork && !generating && (
+                <div className="flex gap-2 mt-3 justify-center">
+                  <button
                     onClick={() => { setArtwork(null); setPrompt(""); setShared(false); }}
+                    className="w-9 h-9 rounded-full border border-border bg-card flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                    title="Novo design"
                   >
                     <RefreshCw className="w-4 h-4" />
-                    Criar novo design
-                  </Button>
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="empty"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="aspect-square rounded-2xl border-2 border-dashed border-border bg-muted/30 flex flex-col items-center justify-center gap-3 text-muted-foreground"
-                >
-                  <Wand2 className="w-12 h-12 opacity-30" />
-                  <div className="text-center">
-                    <p className="font-medium">Seu design aparecerá aqui</p>
-                    <p className="text-sm mt-1 opacity-70">Descreva e clique em Gerar</p>
-                  </div>
-                </motion.div>
+                  </button>
+                  <button
+                    onClick={handleShare}
+                    disabled={sharing || shared}
+                    className="w-9 h-9 rounded-full border border-border bg-card flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                    title={shared ? "Compartilhado!" : "Compartilhar na galeria"}
+                  >
+                    {sharing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Share2 className="w-4 h-4" />}
+                  </button>
+                  <button
+                    onClick={handleOrder}
+                    className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-primary-foreground shadow-sm hover:opacity-90 transition-opacity"
+                    title="Pedir camiseta"
+                  >
+                    <ShoppingCart className="w-4 h-4" />
+                  </button>
+                </div>
               )}
-            </AnimatePresence>
+            </div>
+
+            {/* Right: refinement panel */}
+            <div className="flex flex-col gap-4">
+              {/* Style pills */}
+              {styles && styles.length > 0 && (
+                <div>
+                  <p className="text-xs font-medium mb-2">Estilo</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {styles.map((style) => (
+                      <button
+                        key={style.slug}
+                        onClick={() => setSelectedStyle(selectedStyle === style.slug ? null : style.slug)}
+                        className={`px-2 py-1 rounded-full text-[11px] border transition-all ${
+                          selectedStyle === style.slug
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "bg-card text-muted-foreground border-border"
+                        }`}
+                      >
+                        {style.label.split(" ")[0]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Refinement */}
+              {artwork && (
+                <div>
+                  <p className="text-xs font-medium mb-2">Refinar</p>
+                  {!user ? (
+                    <button
+                      onClick={() => setConversionModal("refine")}
+                      className="w-full flex flex-col items-center gap-1.5 py-4 rounded-lg border-2 border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+                    >
+                      <Lock className="w-4 h-4" />
+                      <span className="text-[11px] text-center">Entre para refinar</span>
+                    </button>
+                  ) : (
+                    <>
+                      <Textarea
+                        placeholder="Adicione mais cores..."
+                        value={refinementPrompt}
+                        onChange={(e) => setRefinementPrompt(e.target.value)}
+                        className="min-h-[72px] text-xs resize-none"
+                      />
+                      <button
+                        onClick={handleRefine}
+                        disabled={refining || !refinementPrompt.trim()}
+                        className="w-full mt-2 flex items-center justify-center gap-1.5 py-2 rounded-lg border border-border bg-card text-xs font-medium disabled:opacity-50 hover:bg-muted transition-colors"
+                      >
+                        {refining ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+                        Refinar
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* Order CTA */}
+              {artwork && !generating && (
+                <button
+                  onClick={handleOrder}
+                  className="w-full bg-primary text-primary-foreground rounded-lg py-2.5 text-xs font-medium flex items-center justify-center gap-1.5 active:opacity-90 transition-opacity"
+                >
+                  <ShoppingCart className="w-3.5 h-3.5" />
+                  Pedir camiseta
+                </button>
+              )}
+            </div>
           </div>
-        </div>
-      </div>
+        </section>
+      )}
 
       {conversionModal && (
         <GuestConversionModal

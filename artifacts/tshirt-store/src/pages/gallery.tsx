@@ -193,91 +193,89 @@ export default function GalleryPage() {
   const artworks = (gallery?.artworks ?? []) as GalleryArtwork[];
 
   return (
-    <div className="min-h-screen py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-black mb-2">Galeria da Comunidade</h1>
-          <p className="text-muted-foreground">Designs criados com IA pela nossa comunidade</p>
-        </div>
+    <div className="min-h-screen">
+      <div className="px-4 pt-5 pb-4">
+        <h1 className="font-display text-2xl mb-1 text-foreground">Galeria da Comunidade</h1>
+        <p className="text-sm text-muted-foreground">Designs criados com IA pela nossa comunidade</p>
+      </div>
 
-        {/* Filters */}
-        <div className="flex flex-wrap items-center gap-3 mb-8">
-          <div className="flex flex-wrap gap-2">
+      {/* Sort pills + style filter */}
+      <div className="px-4 mb-4 space-y-3">
+        <div className="flex gap-2">
+          {(["recent", "popular"] as const).map((s) => (
             <button
-              onClick={() => setSelectedStyle("all")}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                selectedStyle === "all"
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+              key={s}
+              onClick={() => setSort(s)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+                sort === s
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-card text-muted-foreground border-border"
               }`}
             >
-              Todos
+              {s === "recent" ? <><Clock className="w-3 h-3" /> Recentes</> : <><TrendingUp className="w-3 h-3" /> Populares</>}
             </button>
-            {styles?.map((style) => (
-              <button
-                key={style.slug}
-                onClick={() => setSelectedStyle(style.slug)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all flex items-center gap-1.5 ${
-                  selectedStyle === style.slug
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80"
-                }`}
-              >
-                <span>{STYLE_EMOJIS[style.slug] ?? style.icon ?? "🎨"}</span>
-                {style.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="ml-auto flex items-center gap-2">
-            <Select value={sort} onValueChange={(v) => setSort(v as "recent" | "popular")}>
-              <SelectTrigger className="w-36 h-9">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="recent">
-                  <span className="flex items-center gap-2">
-                    <Clock className="w-3.5 h-3.5" /> Recentes
-                  </span>
-                </SelectItem>
-                <SelectItem value="popular">
-                  <span className="flex items-center gap-2">
-                    <TrendingUp className="w-3.5 h-3.5" /> Populares
-                  </span>
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          ))}
         </div>
 
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+          <button
+            onClick={() => setSelectedStyle("all")}
+            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+              selectedStyle === "all"
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-card text-muted-foreground border-border"
+            }`}
+          >
+            Todos
+          </button>
+          {styles?.map((style) => (
+            <button
+              key={style.slug}
+              onClick={() => setSelectedStyle(style.slug)}
+              className={`flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+                selectedStyle === style.slug
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-card text-muted-foreground border-border"
+              }`}
+            >
+              <span>{STYLE_EMOJIS[style.slug] ?? style.icon ?? "🎨"}</span>
+              {style.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
         {/* Grid */}
+      <div className="px-4 pb-6">
         {isLoading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {[...Array(12)].map((_, i) => (
+          <div className="grid grid-cols-2 gap-3">
+            {[...Array(8)].map((_, i) => (
               <div key={i} className="aspect-square">
-                <Skeleton className="w-full h-full rounded-2xl" />
+                <Skeleton className="w-full h-full rounded-xl" />
               </div>
             ))}
           </div>
         ) : artworks.length === 0 ? (
-          <div className="text-center py-24">
-            <div className="text-5xl mb-4">🎨</div>
-            <h3 className="text-lg font-semibold mb-2">Nenhum design ainda</h3>
-            <p className="text-muted-foreground mb-6">
+          <div className="text-center py-20">
+            <div className="text-4xl mb-3">🎨</div>
+            <h3 className="text-base font-semibold mb-2">Nenhum design ainda</h3>
+            <p className="text-sm text-muted-foreground mb-5">
               {selectedStyle !== "all"
                 ? "Nenhum design neste estilo ainda. Seja o primeiro!"
                 : "A galeria está vazia. Seja o primeiro a criar!"}
             </p>
-            <Button asChild>
-              <Link href="/create">Criar design</Link>
-            </Button>
+            <Link href="/create">
+              <button className="bg-primary text-primary-foreground rounded-lg px-5 py-2.5 text-sm font-medium">
+                Criar design
+              </button>
+            </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             {artworks.map((artwork, i) => (
               <motion.div
                 key={artwork.id}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: i * 0.04 }}
               >
@@ -285,47 +283,22 @@ export default function GalleryPage() {
                   className="w-full text-left"
                   onClick={() => setActiveArtwork(artwork)}
                 >
-                  <div className="group relative rounded-2xl overflow-hidden border border-border bg-card aspect-square cursor-pointer hover:shadow-xl hover:border-primary/30 transition-all duration-300">
-                    <img
-                      src={artwork.imageUrl}
-                      alt={artwork.prompt}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                      <div className="absolute bottom-0 left-0 right-0 p-3">
-                        <p className="text-white text-xs line-clamp-2 mb-1.5">{artwork.prompt}</p>
-                        {artwork.authorName && (
-                          <p className="text-white/60 text-xs mb-1.5">por {artwork.authorName}</p>
-                        )}
-                        <div className="flex items-center justify-between">
-                          {artwork.styleLabel && (
-                            <Badge variant="secondary" className="bg-white/20 text-white border-0 text-xs">
-                              {artwork.styleLabel}
-                            </Badge>
-                          )}
-                          <div className="flex items-center gap-2 text-white/80 text-xs ml-auto">
-                            <span className="flex items-center gap-1">
-                              <Heart className="w-3 h-3" />
-                              {artwork.likes}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Eye className="w-3 h-3" />
-                              {artwork.views}
-                            </span>
-                          </div>
-                        </div>
-                        {artwork.createdAt && (
-                          <p className="text-white/50 text-[10px] mt-1.5">
-                            {new Date(artwork.createdAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" })}
-                          </p>
-                        )}
-                      </div>
+                  <div className="bg-card rounded-xl overflow-hidden border border-border shadow-sm hover:shadow-md transition-shadow">
+                    <div className="aspect-square overflow-hidden">
+                      <img
+                        src={artwork.imageUrl}
+                        alt={artwork.prompt}
+                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                      />
                     </div>
-
-                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center shadow-lg">
-                        <ShoppingCart className="w-4 h-4 text-primary-foreground" />
-                      </div>
+                    <div className="px-2 py-2 flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground truncate max-w-[80px]">
+                        {artwork.authorName ?? "Anônimo"}
+                      </span>
+                      <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Heart className="w-3 h-3" />
+                        {artwork.likes}
+                      </span>
                     </div>
                   </div>
                 </button>
@@ -335,7 +308,7 @@ export default function GalleryPage() {
         )}
 
         {gallery && gallery.total > 0 && (
-          <p className="text-center text-sm text-muted-foreground mt-8">
+          <p className="text-center text-xs text-muted-foreground mt-6">
             Mostrando {artworks.length} de {gallery.total} designs
           </p>
         )}
