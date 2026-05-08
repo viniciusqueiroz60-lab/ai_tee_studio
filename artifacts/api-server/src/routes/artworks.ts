@@ -83,7 +83,28 @@ router.post("/generate", optionalAuth, async (req: AuthenticatedRequest, res): P
   }
 
   const enrichedPrompt = buildEnrichedPrompt(prompt, promptParams);
-  const imageUrl = await generateArtworkImage(prompt, promptParams);
+
+  let imageUrl: string;
+  try {
+    imageUrl = await generateArtworkImage(prompt, promptParams);
+  } catch (err: any) {
+    // Refund the token since generation failed
+    if (req.user) {
+      await db.update(usersTable).set({ tokenBalance: req.user.tokenBalance }).where(eq(usersTable.id, req.user.id));
+    } else if (sessionId) {
+      const [session] = await db.select().from(guestSessionsTable).where(eq(guestSessionsTable.sessionId, sessionId));
+      if (session) {
+        await db.update(guestSessionsTable).set({ tokenBalance: session.tokenBalance + 1 }).where(eq(guestSessionsTable.sessionId, sessionId));
+      }
+    }
+    const msg: string = err?.message ?? "";
+    if (msg.includes("429") || msg.includes("quota") || msg.includes("RESOURCE_EXHAUSTED")) {
+      res.status(503).json({ error: "A IA está temporariamente indisponível (cota excedida). Tente novamente mais tarde." });
+    } else {
+      res.status(503).json({ error: "Falha ao gerar imagem com IA. Tente novamente." });
+    }
+    return;
+  }
 
   const [artwork] = await db
     .insert(artworksTable)
