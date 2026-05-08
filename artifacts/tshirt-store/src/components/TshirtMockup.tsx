@@ -56,6 +56,70 @@ function buildTshirtPath2D(w: number, h: number): Path2D {
   return new Path2D(d);
 }
 
+function createFabricTexture(tileSize = 4): HTMLCanvasElement {
+  const tc = document.createElement("canvas");
+  tc.width = tileSize * 2;
+  tc.height = tileSize * 2;
+  const tx = tc.getContext("2d")!;
+
+  tx.clearRect(0, 0, tc.width, tc.height);
+
+  tx.strokeStyle = "rgba(255,255,255,0.55)";
+  tx.lineWidth = 0.5;
+  for (let i = 0; i < tc.width; i += tileSize) {
+    tx.beginPath();
+    tx.moveTo(i, 0);
+    tx.lineTo(i, tc.height);
+    tx.stroke();
+  }
+  for (let j = 0; j < tc.height; j += tileSize) {
+    tx.beginPath();
+    tx.moveTo(0, j);
+    tx.lineTo(tc.width, j);
+    tx.stroke();
+  }
+
+  tx.strokeStyle = "rgba(0,0,0,0.18)";
+  tx.lineWidth = 0.4;
+  for (let i = tileSize / 2; i < tc.width; i += tileSize) {
+    tx.beginPath();
+    tx.moveTo(i, 0);
+    tx.lineTo(i, tc.height);
+    tx.stroke();
+  }
+  for (let j = tileSize / 2; j < tc.height; j += tileSize) {
+    tx.beginPath();
+    tx.moveTo(0, j);
+    tx.lineTo(tc.width, j);
+    tx.stroke();
+  }
+
+  tx.fillStyle = "rgba(255,255,255,0.06)";
+  tx.fillRect(0, 0, tileSize, tileSize);
+  tx.fillRect(tileSize, tileSize, tileSize, tileSize);
+
+  return tc;
+}
+
+function applyFabricTexture(
+  ctx: CanvasRenderingContext2D,
+  clipPath: Path2D,
+  W: number,
+  H: number
+) {
+  const tileCanvas = createFabricTexture(4);
+  const pattern = ctx.createPattern(tileCanvas, "repeat");
+  if (!pattern) return;
+
+  ctx.save();
+  ctx.clip(clipPath);
+  ctx.globalCompositeOperation = "soft-light";
+  ctx.globalAlpha = 0.55;
+  ctx.fillStyle = pattern;
+  ctx.fillRect(0, 0, W, H);
+  ctx.restore();
+}
+
 function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -76,17 +140,18 @@ function drawFallbackShirt(
   const W = canvas.width;
   const H = canvas.height;
   ctx.clearRect(0, 0, W, H);
+  const path = buildTshirtPath2D(W, H);
   ctx.save();
   ctx.shadowColor = "rgba(0,0,0,0.18)";
   ctx.shadowBlur = 28;
   ctx.shadowOffsetY = 8;
-  const path = buildTshirtPath2D(W, H);
   ctx.fillStyle = hexColor;
   ctx.fill(path);
   ctx.strokeStyle = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.10)";
   ctx.lineWidth = 2;
   ctx.stroke(path);
   ctx.restore();
+  applyFabricTexture(ctx, path, W, H);
 }
 
 async function drawWithModelTemplate(
@@ -113,6 +178,9 @@ async function drawWithModelTemplate(
     ctx.fillRect(0, 0, W, H);
     ctx.restore();
   }
+
+  const shirtPath = buildTshirtPath2D(W, H);
+  applyFabricTexture(ctx, shirtPath, W, H);
 
   const artworkImg = await loadImage(artworkUrl);
   ctx.save();
@@ -141,17 +209,19 @@ async function drawWithGeneratedShirt(
   const H = canvas.height;
   ctx.clearRect(0, 0, W, H);
 
+  const path = buildTshirtPath2D(W, H);
   ctx.save();
   ctx.shadowColor = "rgba(0,0,0,0.18)";
   ctx.shadowBlur = 28;
   ctx.shadowOffsetY = 8;
-  const path = buildTshirtPath2D(W, H);
   ctx.fillStyle = hexColor;
   ctx.fill(path);
   ctx.strokeStyle = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.10)";
   ctx.lineWidth = 2;
   ctx.stroke(path);
   ctx.restore();
+
+  applyFabricTexture(ctx, path, W, H);
 
   const artworkImg = await loadImage(artworkUrl);
   ctx.save();
