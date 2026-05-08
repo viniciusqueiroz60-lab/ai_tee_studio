@@ -309,6 +309,7 @@ export const CreateCheckoutBody = zod.object({
   modelId: zod.number(),
   color: zod.string(),
   size: zod.string(),
+  mockupPreview: zod.string().nullish(),
 });
 
 export const CreateCheckoutResponse = zod.object({

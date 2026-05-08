@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useGetArtwork, useGetTshirtModels } from "@workspace/api-client-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -16,7 +16,7 @@ import {
 import { Link } from "wouter";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
-import { TshirtMockup } from "@/components/TshirtMockup";
+import { TshirtMockup, type TshirtMockupHandle } from "@/components/TshirtMockup";
 
 const SIZES = ["PP", "P", "M", "G", "GG", "XGG"];
 
@@ -37,6 +37,7 @@ export default function ProductPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const artworkId = parseInt(params?.id ?? "0", 10);
+  const mockupRef = useRef<TshirtMockupHandle>(null);
 
   const { data: artwork, isLoading: artworkLoading } = useGetArtwork(artworkId);
   const { data: models, isLoading: modelsLoading } = useGetTshirtModels();
@@ -92,6 +93,8 @@ export default function ProductPage() {
     setCheckingOut(true);
     setCheckoutError(null);
     try {
+      let mockupDataUrl: string | undefined;
+      try { mockupDataUrl = mockupRef.current?.getDataUrl() ?? undefined; } catch { /* canvas taint — skip */ }
       const result = await apiJson<{ url: string }>("/checkout", {
         method: "POST",
         body: JSON.stringify({
@@ -99,6 +102,7 @@ export default function ProductPage() {
           modelId: selectedModel,
           color: selectedColor,
           size: selectedSize,
+          mockupPreview: mockupDataUrl,
         }),
       });
       window.location.href = result.url;
@@ -160,10 +164,12 @@ export default function ProductPage() {
               className="relative"
             >
               <TshirtMockup
+                ref={mockupRef}
                 artworkUrl={artwork.imageUrl}
                 color={selectedColor ?? "white"}
                 mockupUrl={currentModel?.mockupUrl}
                 altText={artwork.prompt}
+                showDownload
               />
               {artwork.styleLabel && (
                 <div className="absolute top-4 left-4">

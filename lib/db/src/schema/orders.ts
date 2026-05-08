@@ -14,6 +14,7 @@ export const ordersTable = pgTable("orders", {
   status: text("status").notNull().default("pending"),
   masterized: boolean("masterized").notNull().default(false),
   totalPrice: doublePrecision("total_price").notNull(),
+  mockupPreview: text("mockup_preview"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });
