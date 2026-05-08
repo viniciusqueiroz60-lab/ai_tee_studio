@@ -127,7 +127,9 @@ router.post("/generate", optionalAuth, async (req: AuthenticatedRequest, res): P
     .insert(artworksTable)
     .values({
       userId: req.user?.id ?? null,
-      guestSessionId: sessionId ?? null,
+      // Authenticated users never have artwork linked to a guest session,
+      // even if the client passed a sessionId in the body.
+      guestSessionId: req.user ? null : (sessionId ?? null),
       prompt,
       enrichedPrompt,
       styleSlug: styleSlug ?? null,

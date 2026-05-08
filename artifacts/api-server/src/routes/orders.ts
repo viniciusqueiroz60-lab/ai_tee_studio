@@ -72,6 +72,12 @@ router.post("/checkout", optionalAuth, requireAuth, async (req: AuthenticatedReq
   const [model] = await db.select().from(tshirtModelsTable).where(eq(tshirtModelsTable.id, modelId));
   if (!model) { res.status(404).json({ error: "Model not found" }); return; }
 
+  // Validate color against the model's declared available colors
+  if (!model.availableColors.includes(color)) {
+    res.status(400).json({ error: `Cor inválida para este modelo. Cores disponíveis: ${model.availableColors.join(", ")}` });
+    return;
+  }
+
   const stripe = getStripe();
 
   const domains = process.env.REPLIT_DOMAINS?.split(",")[0];
