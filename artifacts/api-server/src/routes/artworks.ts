@@ -71,13 +71,26 @@ router.post("/generate", optionalAuth, async (req: AuthenticatedRequest, res): P
       return;
     }
   } else if (sessionId) {
+    const now = new Date();
     const [deducted] = await db
       .update(guestSessionsTable)
       .set({ tokenBalance: sql`${guestSessionsTable.tokenBalance} - 1` })
-      .where(and(eq(guestSessionsTable.sessionId, sessionId), gt(guestSessionsTable.tokenBalance, 0)))
+      .where(
+        and(
+          eq(guestSessionsTable.sessionId, sessionId),
+          gt(guestSessionsTable.tokenBalance, 0),
+          gt(guestSessionsTable.expiresAt, now)
+        )
+      )
       .returning({ sessionId: guestSessionsTable.sessionId });
     if (!deducted) {
-      res.status(402).json({ error: "Insufficient guest tokens" });
+      // Check whether the session exists at all to return a clear error
+      const [session] = await db.select().from(guestSessionsTable).where(eq(guestSessionsTable.sessionId, sessionId));
+      if (!session || session.expiresAt <= now) {
+        res.status(401).json({ error: "Sessão de convidado expirada ou inválida" });
+      } else {
+        res.status(402).json({ error: "Tokens de convidado insuficientes" });
+      }
       return;
     }
   } else {

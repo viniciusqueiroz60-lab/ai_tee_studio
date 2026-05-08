@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useGetGallery, useGetStyles } from "@workspace/api-client-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -49,11 +49,23 @@ interface ArtworkDetailModalProps {
 }
 
 function ArtworkDetailModal({ artwork, onClose }: ArtworkDetailModalProps) {
-  const { user } = useAuth();
+  const { user, idToken } = useAuth();
   const [, navigate] = useLocation();
   const [likes, setLikes] = useState(artwork?.likes ?? 0);
   const [liked, setLiked] = useState(false);
   const [liking, setLiking] = useState(false);
+
+  // Hydrate like state from server when the modal opens for an authenticated user
+  useEffect(() => {
+    if (!artwork || !user || !idToken) return;
+    const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+    fetch(`${BASE}/api/artworks/${artwork.id}`, {
+      headers: { Authorization: `Bearer ${idToken}` },
+    })
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => { if (data?.userLiked != null) setLiked(data.userLiked); })
+      .catch(() => {});
+  }, [artwork?.id, user?.uid]);
 
   if (!artwork) return null;
 
