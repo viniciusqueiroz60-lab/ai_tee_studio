@@ -99,8 +99,8 @@ export default function ProductPage() {
         }),
       });
       window.location.href = result.url;
-    } catch (e: any) {
-      setCheckoutError(e.message ?? "Erro ao processar pagamento");
+    } catch (e: unknown) {
+      setCheckoutError(e instanceof Error ? e.message : "Erro ao processar pagamento");
     } finally {
       setCheckingOut(false);
     }

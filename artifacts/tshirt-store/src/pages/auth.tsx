@@ -22,7 +22,7 @@ export default function AuthPage() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get("signup") === "true") setIsSignUp(true);
+    if (params.get("signup") === "true" || params.get("mode") === "signup") setIsSignUp(true);
   }, []);
 
   useEffect(() => {
@@ -36,8 +36,8 @@ export default function AuthPage() {
     setSubmitting(true);
     try {
       await signInWithGoogle();
-    } catch (e: any) {
-      setError(e.message ?? "Erro ao entrar com Google");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Erro ao entrar com Google");
     } finally {
       setSubmitting(false);
     }
@@ -53,14 +53,15 @@ export default function AuthPage() {
       } else {
         await signInWithEmail(email, password);
       }
-    } catch (e: any) {
-      const msg = e.code === "auth/invalid-credential"
+    } catch (e: unknown) {
+      const code = (e as { code?: string }).code;
+      const msg = code === "auth/invalid-credential"
         ? "Email ou senha inválidos"
-        : e.code === "auth/email-already-in-use"
+        : code === "auth/email-already-in-use"
         ? "Este email já está em uso"
-        : e.code === "auth/weak-password"
+        : code === "auth/weak-password"
         ? "Senha muito fraca (mínimo 6 caracteres)"
-        : e.message ?? "Erro de autenticação";
+        : e instanceof Error ? e.message : "Erro de autenticação";
       setError(msg);
     } finally {
       setSubmitting(false);

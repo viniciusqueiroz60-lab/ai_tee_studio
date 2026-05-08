@@ -141,15 +141,22 @@ router.post("/webhooks/stripe", async (req, res): Promise<void> => {
 
   let event: Stripe.Event;
 
+  // Fail closed: if no webhook secret is configured, reject all webhook calls
+  if (!webhookSecret) {
+    req.log.error("STRIPE_WEBHOOK_SECRET is not configured — rejecting webhook");
+    res.status(400).json({ error: "Webhook secret not configured" });
+    return;
+  }
+  if (!sig) {
+    res.status(400).json({ error: "Missing stripe-signature header" });
+    return;
+  }
+
   try {
     const stripe = getStripe();
-    if (webhookSecret && sig) {
-      event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
-    } else {
-      event = req.body as Stripe.Event;
-    }
+    event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
   } catch (err) {
-    req.log.error({ err }, "Webhook signature verification failed");
+    req.log.error({ err }, "Stripe webhook signature verification failed");
     res.status(400).json({ error: "Invalid signature" });
     return;
   }

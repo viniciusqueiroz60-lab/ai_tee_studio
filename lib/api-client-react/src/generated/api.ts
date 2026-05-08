@@ -957,31 +957,31 @@ export function useGetGallery<
 }
 
 /**
- * @summary Get gallery statistics by style
+ * @summary Get per-style public artwork counts
  */
-export const getGetGalleryStatsUrl = () => {
-  return `/api/gallery/stats`;
+export const getGetGalleryStylesUrl = () => {
+  return `/api/gallery/styles`;
 };
 
-export const getGalleryStats = async (
+export const getGalleryStyles = async (
   options?: RequestInit,
 ): Promise<StyleStat[]> => {
-  return customFetch<StyleStat[]>(getGetGalleryStatsUrl(), {
+  return customFetch<StyleStat[]>(getGetGalleryStylesUrl(), {
     ...options,
     method: "GET",
   });
 };
 
-export const getGetGalleryStatsQueryKey = () => {
-  return [`/api/gallery/stats`] as const;
+export const getGetGalleryStylesQueryKey = () => {
+  return [`/api/gallery/styles`] as const;
 };
 
-export const getGetGalleryStatsQueryOptions = <
-  TData = Awaited<ReturnType<typeof getGalleryStats>>,
+export const getGetGalleryStylesQueryOptions = <
+  TData = Awaited<ReturnType<typeof getGalleryStyles>>,
   TError = ErrorType<unknown>,
 >(options?: {
   query?: UseQueryOptions<
-    Awaited<ReturnType<typeof getGalleryStats>>,
+    Awaited<ReturnType<typeof getGalleryStyles>>,
     TError,
     TData
   >;
@@ -989,40 +989,40 @@ export const getGetGalleryStatsQueryOptions = <
 }) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getGetGalleryStatsQueryKey();
+  const queryKey = queryOptions?.queryKey ?? getGetGalleryStylesQueryKey();
 
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof getGalleryStats>>> = ({
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getGalleryStyles>>> = ({
     signal,
-  }) => getGalleryStats({ signal, ...requestOptions });
+  }) => getGalleryStyles({ signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof getGalleryStats>>,
+    Awaited<ReturnType<typeof getGalleryStyles>>,
     TError,
     TData
   > & { queryKey: QueryKey };
 };
 
-export type GetGalleryStatsQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getGalleryStats>>
+export type GetGalleryStylesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getGalleryStyles>>
 >;
-export type GetGalleryStatsQueryError = ErrorType<unknown>;
+export type GetGalleryStylesQueryError = ErrorType<unknown>;
 
 /**
- * @summary Get gallery statistics by style
+ * @summary Get per-style public artwork counts
  */
 
-export function useGetGalleryStats<
-  TData = Awaited<ReturnType<typeof getGalleryStats>>,
+export function useGetGalleryStyles<
+  TData = Awaited<ReturnType<typeof getGalleryStyles>>,
   TError = ErrorType<unknown>,
 >(options?: {
   query?: UseQueryOptions<
-    Awaited<ReturnType<typeof getGalleryStats>>,
+    Awaited<ReturnType<typeof getGalleryStyles>>,
     TError,
     TData
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getGetGalleryStatsQueryOptions(options);
+  const queryOptions = getGetGalleryStylesQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

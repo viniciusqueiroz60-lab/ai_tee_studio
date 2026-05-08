@@ -1,0 +1,33 @@
+Preciso refatorar minha aplicação atual de venda de camisetas com IA para integrá-la ao Shopify via Storefront API. O objetivo é delegar toda a gestão de pedidos, carrinho e checkout para o Shopify, mantendo a experiência de criação personalizada na nossa interface.
+
+Por favor, aplique as seguintes alterações no projeto:
+
+1. Integração com Shopify Storefront API
+Configure o Shopify JavaScript Buy SDK no projeto.
+
+Crie um serviço de conexão usando as minhas credenciais do Shopify (AccessToken e Domain).
+
+Vincule o produto 'Camiseta Personalizada' do Shopify ao nosso fluxo de compra.
+
+2. Fluxo de Carrinho 'Headless'
+Altere o botão 'Comprar' para que, em vez de um checkout interno, ele utilize o método checkout.create do Shopify.
+
+Importante: Use Line Item Properties para anexar a URL da imagem (baixa resolução) gerada pelo Nano Banana 2 ao item no carrinho. A propriedade deve se chamar _design_preview_url (o prefixo '_' esconde a URL do cliente no carrinho, mas mantém visível para mim no Admin).
+
+3. Sistema de Tokens e Refinamento
+Garanta que a lógica de Tokens esteja vinculada ao ID do usuário (via Supabase ou banco local).
+
+Melhore a função de 'Refinamento' para usar Image-to-Image. Ao solicitar uma alteração, envie a imagem atual como 'anchor' (referência estrutural) para o Nano Banana 2, garantindo que o novo prompt modifique apenas detalhes específicos e não o desenho todo.
+
+4. Gatilho de Masterização (Pós-Pagamento)
+Crie uma rota de Webhook (ou uma função de verificação) que escute o status do pedido no Shopify.
+
+Assim que o status for 'Paid', dispare automaticamente o processo de Upscaling/Masterização da imagem final. O arquivo de alta resolução deve ser gerado e armazenado no nosso servidor (Hostinger/Storage) com o nome do ID do pedido.
+
+5. UI/UX (Aprimoramento Visual)
+Refine a interface para um estilo Premium Dark Mode com Glassmorphism (nível Lovart.ai).
+
+A galeria de inspiração deve carregar dinamicamente as artes salvas no banco de dados, permitindo que novos usuários cliquem em 'Remixar' para carregar aquele prompt base no editor.
+
+6. Configuração de Variáveis
+Mova todas as chaves sensíveis (Shopify API, Google AI Studio Key) para o arquivo .env do Replit."

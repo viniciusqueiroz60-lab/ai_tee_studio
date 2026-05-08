@@ -252,14 +252,14 @@ paths:
               schema:
                 $ref: "#/components/schemas/GalleryResponse"
 
-  /gallery/stats:
+  /gallery/styles:
     get:
-      operationId: getGalleryStats
+      operationId: getGalleryStyles
       tags: [gallery]
-      summary: Get gallery statistics by style
+      summary: Get per-style public artwork counts
       responses:
         "200":
-          description: Gallery stats per style
+          description: Style counts for public approved artworks
           content:
             application/json:
               schema:

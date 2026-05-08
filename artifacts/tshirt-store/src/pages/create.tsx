@@ -119,6 +119,7 @@ export default function CreatePage() {
   const [shared, setShared] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [conversionModal, setConversionModal] = useState<"refine" | "share" | "order" | null>(null);
+  const [shareConfirmOpen, setShareConfirmOpen] = useState(false);
 
   const { data: styles } = useGetStyles();
 
@@ -179,10 +180,15 @@ export default function CreatePage() {
     }
   }
 
-  async function handleShare() {
+  function handleShare() {
     if (!artwork) return;
     if (!user) { setConversionModal("share"); return; }
+    setShareConfirmOpen(true);
+  }
 
+  async function confirmShare() {
+    if (!artwork) return;
+    setShareConfirmOpen(false);
     setSharing(true);
     try {
       await apiJson(`/artworks/${artwork.id}/share`, { method: "POST" });
@@ -447,6 +453,26 @@ export default function CreatePage() {
           onClose={() => setConversionModal(null)}
         />
       )}
+
+      <Dialog open={shareConfirmOpen} onOpenChange={(o) => { if (!o) setShareConfirmOpen(false); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Compartilhar na galeria?</DialogTitle>
+            <DialogDescription>
+              Seu design será enviado para moderação e, se aprovado, aparecerá na galeria pública da comunidade.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-3 pt-2">
+            <Button variant="outline" className="flex-1" onClick={() => setShareConfirmOpen(false)}>
+              Cancelar
+            </Button>
+            <Button className="flex-1 gap-2" onClick={confirmShare}>
+              <Share2 className="w-4 h-4" />
+              Compartilhar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

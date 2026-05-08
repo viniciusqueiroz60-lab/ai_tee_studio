@@ -78,8 +78,8 @@ export default function AdminPage() {
       ]);
       setUsers(u); setArtworks(a); setOrders(o);
       setStyles(s); setModels(m);
-    } catch (e: any) {
-      setError(e.message ?? "Acesso negado");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Acesso negado");
     } finally {
       setLoadingData(false);
     }
@@ -131,7 +131,7 @@ export default function AdminPage() {
       }
       setStyleForm(null);
       toast({ title: "Estilo salvo!" });
-    } catch (e: any) { toast({ title: "Erro", description: e.message, variant: "destructive" }); }
+    } catch (e: unknown) { toast({ title: "Erro", description: e instanceof Error ? e.message : "Erro desconhecido", variant: "destructive" }); }
   }
 
   async function deleteStyle(id: number) {
@@ -158,7 +158,7 @@ export default function AdminPage() {
       }
       setModelForm(null);
       toast({ title: "Modelo salvo!" });
-    } catch (e: any) { toast({ title: "Erro", description: e.message, variant: "destructive" }); }
+    } catch (e: unknown) { toast({ title: "Erro", description: e instanceof Error ? e.message : "Erro desconhecido", variant: "destructive" }); }
   }
 
   async function deleteModel(id: number) {

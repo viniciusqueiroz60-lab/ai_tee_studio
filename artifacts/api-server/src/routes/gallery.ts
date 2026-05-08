@@ -102,4 +102,9 @@ router.get("/gallery/styles", async (_req, res): Promise<void> => {
   res.json(stats);
 });
 
+// /gallery/stats — backward-compat alias for /gallery/styles
+router.get("/gallery/stats", async (_req, res): Promise<void> => {
+  res.redirect(307, "/api/gallery/styles");
+});
+
 export default router;
