@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGuestSession } from "@/contexts/GuestSessionContext";
 import { apiJson } from "@/lib/api";
 import { signInWithGoogle, signInWithEmail, signUpWithEmail } from "@/lib/firebase";
-import { useGetStyles } from "@workspace/api-client-react";
+import { useGetStyles, useGetTshirtModels } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,10 +19,11 @@ import {
 } from "@/components/ui/dialog";
 import {
   Zap, Loader2, Wand2, RefreshCw, ShoppingCart,
-  Share2, AlertCircle, Lock, Sparkles,
+  Share2, AlertCircle, Lock, Sparkles, Coins,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "wouter";
+import { TshirtMockup, type TshirtMockupHandle } from "@/components/TshirtMockup";
 
 const STYLE_EMOJIS: Record<string, string> = {
   "cyberpunk-neon": "⚡",
@@ -206,6 +207,10 @@ export default function CreatePage() {
   const [shareConfirmOpen, setShareConfirmOpen] = useState(false);
 
   const { data: styles } = useGetStyles();
+  const { data: models } = useGetTshirtModels();
+  const mockupRef = useRef<TshirtMockupHandle>(null);
+  const [selectedColor, setSelectedColor] = useState("white");
+  const [selectedSize, setSelectedSize] = useState("M");
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -636,6 +641,97 @@ export default function CreatePage() {
             </div>
           </div>
         </div>
+
+        {/* ── Sua Camiseta ── shown on all screen sizes when artwork exists */}
+        {artwork && !generating && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35 }}
+            className="mt-5 bg-card rounded-2xl border border-border shadow-sm overflow-hidden"
+          >
+            <div className="grid grid-cols-[1fr_1fr] md:grid-cols-[1fr_1.2fr]">
+              {/* Left: T-shirt mockup */}
+              <div className="p-3 bg-muted/20 flex items-center justify-center">
+                <TshirtMockup
+                  ref={mockupRef}
+                  artworkUrl={artwork.imageUrl}
+                  color={selectedColor}
+                  mockupUrl={models?.[0]?.mockupUrl ?? null}
+                  altText={artwork.prompt}
+                />
+              </div>
+
+              {/* Right: config panel */}
+              <div className="p-4 flex flex-col gap-3">
+                <p className="text-sm font-semibold text-foreground">Sua Camiseta</p>
+
+                {/* Color picker */}
+                <div>
+                  <p className="text-[11px] text-muted-foreground mb-1.5 uppercase tracking-wide">Cor da Camiseta</p>
+                  <div className="flex gap-1.5 flex-wrap">
+                    {(models?.[0]?.availableColors ?? ["white", "black"]).map((color) => {
+                      const label: Record<string, string> = {
+                        white: "Branca", black: "Preta", gray: "Cinza",
+                        navy: "Marinho", sand: "Areia", sage: "Sálvia",
+                        charcoal: "Carvão", red: "Vermelho",
+                      };
+                      return (
+                        <button
+                          key={color}
+                          onClick={() => setSelectedColor(color)}
+                          className={`px-2.5 py-1 rounded-lg text-[11px] font-medium border transition-all ${
+                            selectedColor === color
+                              ? "bg-foreground text-background border-foreground"
+                              : "border-border bg-background text-foreground hover:border-primary"
+                          }`}
+                        >
+                          {label[color] ?? color}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Size picker */}
+                <div>
+                  <p className="text-[11px] text-muted-foreground mb-1.5 uppercase tracking-wide">Tamanho</p>
+                  <div className="flex gap-1 flex-wrap">
+                    {["PP", "P", "M", "G", "GG", "XGG"].map((size) => (
+                      <button
+                        key={size}
+                        onClick={() => setSelectedSize(size)}
+                        className={`min-w-[32px] h-8 px-2 rounded-lg text-[11px] font-medium border transition-all ${
+                          selectedSize === size
+                            ? "bg-foreground text-background border-foreground"
+                            : "border-border bg-background text-foreground hover:border-primary"
+                        }`}
+                      >
+                        {size}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Price + CTA */}
+                <div className="mt-auto pt-2">
+                  <div className="flex items-baseline gap-1.5 mb-2.5">
+                    <Coins className="w-4 h-4 text-amber-500 self-center" />
+                    <span className="text-xl font-black text-foreground">150</span>
+                    <span className="text-[10px] text-muted-foreground">ou 3x de 50 tokens</span>
+                  </div>
+                  <button
+                    onClick={handleOrder}
+                    className="w-full bg-primary text-primary-foreground rounded-xl py-2.5 text-sm font-medium flex items-center justify-center gap-2 hover:opacity-90 active:opacity-90 transition-opacity"
+                  >
+                    <ShoppingCart className="w-4 h-4" />
+                    Adicionar ao Carrinho
+                  </button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
       </div>
 
       {conversionModal && (
