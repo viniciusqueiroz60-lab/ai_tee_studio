@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db, artworksTable, usersTable, stylesTable } from "@workspace/db";
-import { eq, desc, and, asc, count } from "drizzle-orm";
+import { eq, desc, and, asc, count, inArray } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -41,9 +41,9 @@ router.get("/gallery", async (req, res): Promise<void> => {
     .from(artworksTable)
     .where(whereClause);
 
-  const userIds = artworks.map((a) => a.userId).filter((id): id is number => id != null);
+  const userIds = [...new Set(artworks.map((a) => a.userId).filter((id): id is number => id != null))];
   const users = userIds.length > 0
-    ? await db.select({ id: usersTable.id, displayName: usersTable.displayName }).from(usersTable)
+    ? await db.select({ id: usersTable.id, displayName: usersTable.displayName }).from(usersTable).where(inArray(usersTable.id, userIds))
     : [];
 
   const userMap = new Map(users.map((u) => [u.id, u.displayName ?? null]));
