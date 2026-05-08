@@ -2,8 +2,8 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useGetStyles } from "@workspace/api-client-react";
 import { useGetGallery } from "@workspace/api-client-react";
-import { Wand2, ArrowRight, Heart, Palette, Zap, Shirt } from "lucide-react";
-import { motion } from "framer-motion";
+import { Wand2, ArrowRight, Heart, Palette, Zap, Shirt, ShoppingCart } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { TshirtMockup } from "@/components/TshirtMockup";
 
 const STYLE_EMOJIS: Record<string, string> = {
@@ -76,32 +76,134 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Desktop: featured mockup preview on right */}
-          <div className="hidden md:flex flex-col items-center gap-4">
-            <div className="w-full max-w-[340px]">
+          {/* Desktop: "Seu Design" box + "Sua Camiseta" — identical to create page */}
+          <div className="hidden md:flex flex-col gap-4">
+            {/* "Seu Design" preview box */}
+            <AnimatePresence mode="wait">
+              {featuredArtworks[0] ? (
+                <motion.div key={featuredArtworks[0].id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}
+                  className="relative aspect-square rounded-2xl overflow-hidden border border-border shadow-xl"
+                >
+                  <img src={featuredArtworks[0].imageUrl} alt={featuredArtworks[0].prompt} className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                  <div className="absolute bottom-3 left-3 right-3">
+                    <p className="text-white text-xs line-clamp-2 italic opacity-80">"{featuredArtworks[0].prompt}"</p>
+                  </div>
+                </motion.div>
+              ) : (
+                <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                  className="aspect-square rounded-2xl border-2 border-dashed border-border bg-muted/30 flex flex-col items-center justify-center gap-3 text-muted-foreground"
+                >
+                  <Wand2 className="w-12 h-12 opacity-30" />
+                  <div className="text-center">
+                    <p className="font-medium text-sm">Seu design aparecerá aqui</p>
+                    <p className="text-xs mt-1 opacity-70">Descreva e clique em Gerar</p>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* "Sua Camiseta" section */}
+            <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
+              <div className="grid grid-cols-[1fr_1.2fr]">
+                <div className="p-3 bg-muted/20 flex items-center justify-center">
+                  <TshirtMockup
+                    artworkUrl={featuredArtworks[0]?.imageUrl ?? null}
+                    color={heroColor}
+                    altText={featuredArtworks[0]?.prompt ?? "Prévia da camiseta"}
+                  />
+                </div>
+                <div className="p-4 flex flex-col gap-3">
+                  <p className="text-sm font-semibold text-foreground">Sua Camiseta</p>
+                  <div className="flex gap-1.5 flex-wrap">
+                    {HERO_COLORS.map(({ key, hex, label }) => (
+                      <button
+                        key={key}
+                        title={label}
+                        onClick={() => setHeroColor(key)}
+                        className={`w-6 h-6 rounded-full border-2 transition-all ${heroColor === key ? "border-primary scale-110 shadow-md" : "border-border hover:border-primary/50"}`}
+                        style={{ background: hex }}
+                      />
+                    ))}
+                  </div>
+                  <Link href={featuredArtworks[0] ? `/product/${featuredArtworks[0].id}` : "/create"}>
+                    <button className="w-full bg-primary text-primary-foreground rounded-xl py-2 text-xs font-medium flex items-center justify-center gap-1.5 hover:opacity-90 transition-opacity">
+                      <ShoppingCart className="w-3.5 h-3.5" />
+                      Pedir camiseta
+                    </button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Mobile: "Seu Design" + "Sua Camiseta" cards — identical to create page */}
+      <section className="md:hidden px-4 mt-4 mb-2">
+        <div className="grid gap-3" style={{ gridTemplateColumns: "1.5fr 1fr" }}>
+          {/* Left: "Seu Design" card */}
+          <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
+            <div className="px-3 pt-3 pb-2">
+              <p className="text-[11px] font-semibold text-foreground">Seu Design</p>
+            </div>
+            <div className="px-3 pb-3">
+              <AnimatePresence mode="wait">
+                {featuredArtworks[0] ? (
+                  <motion.div key={featuredArtworks[0].id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
+                    <div className="aspect-square rounded-xl overflow-hidden">
+                      <img src={featuredArtworks[0].imageUrl} alt={featuredArtworks[0].prompt} className="w-full h-full object-cover" />
+                    </div>
+                  </motion.div>
+                ) : (
+                  <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                    className="aspect-square rounded-xl border-2 border-dashed border-border/60 bg-muted/20 flex flex-col items-center justify-center gap-2 text-muted-foreground"
+                  >
+                    <Wand2 className="w-8 h-8 opacity-20" />
+                    <p className="text-[9px] text-center px-2 opacity-50 leading-tight">Descreva e<br/>clique em Gerar</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+            <div className="border-t border-border flex">
+              <Link href="/create" className="flex-1">
+                <div className="flex flex-col items-center justify-center gap-0.5 py-2.5 text-primary hover:opacity-80 transition-opacity">
+                  <Wand2 className="w-3.5 h-3.5" />
+                  <span className="text-[9px] font-medium">Criar</span>
+                </div>
+              </Link>
+              <Link href={featuredArtworks[0] ? `/product/${featuredArtworks[0].id}` : "/create"} className="flex-1 border-l border-border">
+                <div className="flex flex-col items-center justify-center gap-0.5 py-2.5 text-muted-foreground hover:text-foreground transition-colors">
+                  <ShoppingCart className="w-3.5 h-3.5" />
+                  <span className="text-[9px]">Pedir</span>
+                </div>
+              </Link>
+            </div>
+          </div>
+
+          {/* Right: "Sua Camiseta" card */}
+          <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden flex flex-col">
+            <div className="px-3 pt-3 pb-2">
+              <p className="text-[11px] font-semibold text-foreground">Sua Camiseta</p>
+            </div>
+            <div className="px-3 pb-2 flex-1">
               <TshirtMockup
                 artworkUrl={featuredArtworks[0]?.imageUrl ?? null}
                 color={heroColor}
-                altText={featuredArtworks[0]?.prompt ?? "Prévia da camiseta"}
+                altText={featuredArtworks[0]?.prompt ?? "Prévia"}
               />
             </div>
-            {/* Color switcher */}
-            <div className="flex items-center gap-2">
+            <div className="px-3 pb-3 flex gap-1.5 flex-wrap justify-center">
               {HERO_COLORS.map(({ key, hex, label }) => (
                 <button
                   key={key}
                   title={label}
                   onClick={() => setHeroColor(key)}
-                  className={`w-7 h-7 rounded-full border-2 transition-all ${heroColor === key ? "border-primary scale-110 shadow-md" : "border-border hover:border-primary/50"}`}
+                  className={`w-5 h-5 rounded-full border-2 transition-all ${heroColor === key ? "border-primary scale-110" : "border-border"}`}
                   style={{ background: hex }}
                 />
               ))}
             </div>
-            {featuredArtworks[0] && (
-              <p className="text-xs text-muted-foreground text-center max-w-[260px] line-clamp-2 italic">
-                "{featuredArtworks[0].prompt}"
-              </p>
-            )}
           </div>
         </div>
       </section>
