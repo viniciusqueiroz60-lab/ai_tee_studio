@@ -4,6 +4,7 @@ import { useGetStyles } from "@workspace/api-client-react";
 import { useGetGallery } from "@workspace/api-client-react";
 import { Wand2, ArrowRight, Heart, Palette, Zap, Shirt } from "lucide-react";
 import { motion } from "framer-motion";
+import { TshirtMockup } from "@/components/TshirtMockup";
 
 const STYLE_EMOJIS: Record<string, string> = {
   "cyberpunk-neon": "⚡",
@@ -13,8 +14,17 @@ const STYLE_EMOJIS: Record<string, string> = {
   "vector-pop-art": "🎨",
 };
 
+const HERO_COLORS = [
+  { key: "white",    hex: "#F5F5F0", label: "Branca"  },
+  { key: "black",    hex: "#1A1A1A", label: "Preta"   },
+  { key: "navy",     hex: "#1E2A4A", label: "Marinho" },
+  { key: "sage",     hex: "#7C9A7E", label: "Sálvia"  },
+  { key: "sand",     hex: "#C9A97A", label: "Areia"   },
+];
+
 export default function HomePage() {
   const [prompt, setPrompt] = useState("");
+  const [heroColor, setHeroColor] = useState("white");
   const [, navigate] = useLocation();
 
   const { data: styles } = useGetStyles();
@@ -66,24 +76,33 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Desktop: style tiles on right */}
-          {styles && styles.length > 0 && (
-            <div className="hidden md:block">
-              <p className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">Estilos disponíveis</p>
-              <div className="grid grid-cols-3 gap-3">
-                {styles.map((style) => (
-                  <Link key={style.slug} href={`/create?style=${style.slug}`}>
-                    <div className="bg-card border border-border rounded-xl p-4 text-center hover:border-primary hover:shadow-md transition-all cursor-pointer group">
-                      <div className="text-3xl mb-2">{STYLE_EMOJIS[style.slug] ?? style.icon ?? "🎨"}</div>
-                      <p className="text-xs font-medium group-hover:text-primary transition-colors leading-tight">
-                        {style.label}
-                      </p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
+          {/* Desktop: featured mockup preview on right */}
+          <div className="hidden md:flex flex-col items-center gap-4">
+            <div className="w-full max-w-[340px]">
+              <TshirtMockup
+                artworkUrl={featuredArtworks[0]?.imageUrl ?? null}
+                color={heroColor}
+                altText={featuredArtworks[0]?.prompt ?? "Prévia da camiseta"}
+              />
             </div>
-          )}
+            {/* Color switcher */}
+            <div className="flex items-center gap-2">
+              {HERO_COLORS.map(({ key, hex, label }) => (
+                <button
+                  key={key}
+                  title={label}
+                  onClick={() => setHeroColor(key)}
+                  className={`w-7 h-7 rounded-full border-2 transition-all ${heroColor === key ? "border-primary scale-110 shadow-md" : "border-border hover:border-primary/50"}`}
+                  style={{ background: hex }}
+                />
+              ))}
+            </div>
+            {featuredArtworks[0] && (
+              <p className="text-xs text-muted-foreground text-center max-w-[260px] line-clamp-2 italic">
+                "{featuredArtworks[0].prompt}"
+              </p>
+            )}
+          </div>
         </div>
       </section>
 
@@ -152,11 +171,11 @@ export default function HomePage() {
               >
                 <Link href={`/product/${artwork.id}`}>
                   <div className="bg-card rounded-xl overflow-hidden border border-border shadow-sm cursor-pointer hover:shadow-md transition-shadow group">
-                    <div className="aspect-square overflow-hidden">
-                      <img
-                        src={artwork.imageUrl}
-                        alt={artwork.prompt}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    <div className="aspect-square overflow-hidden p-1">
+                      <TshirtMockup
+                        artworkUrl={artwork.imageUrl}
+                        color="white"
+                        altText={artwork.prompt}
                       />
                     </div>
                     <div className="px-2 py-2 flex items-center justify-between">
