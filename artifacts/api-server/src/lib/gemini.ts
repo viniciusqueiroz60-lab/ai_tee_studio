@@ -84,10 +84,10 @@ export async function refineArtworkImage(
       }
     }
 
-    return originalImageUrl;
+    throw new Error("Gemini did not return a refined image.");
   } catch (err) {
-    logger.error({ err }, "Gemini refinement failed, returning original");
-    return originalImageUrl;
+    logger.error({ err }, "Gemini refinement failed");
+    throw err;
   }
 }
 

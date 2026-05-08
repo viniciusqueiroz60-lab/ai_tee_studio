@@ -43,14 +43,22 @@ router.post("/me/migrate-session", optionalAuth, requireAuth, async (req: Authen
   let artworksMigrated = 0;
 
   await db.transaction(async (tx) => {
-    // Claim: atomically zero the guest balance and get the old value
-    const [claimed] = await tx
+    // SELECT FOR UPDATE locks the row so concurrent requests block here.
+    // We read the pre-zero balance from the locked row, then zero it.
+    // Any subsequent concurrent request will read 0 and skip the credit.
+    const [session] = await tx
+      .select({ tokenBalance: guestSessionsTable.tokenBalance })
+      .from(guestSessionsTable)
+      .where(eq(guestSessionsTable.sessionId, sessionId))
+      .for("update");
+
+    tokensAdded = session?.tokenBalance ?? 0;
+
+    // Always zero out the guest session (idempotent)
+    await tx
       .update(guestSessionsTable)
       .set({ tokenBalance: 0 })
-      .where(and(eq(guestSessionsTable.sessionId, sessionId), gt(guestSessionsTable.tokenBalance, 0)))
-      .returning({ tokenBalance: guestSessionsTable.tokenBalance });
-
-    tokensAdded = claimed?.tokenBalance ?? 0;
+      .where(eq(guestSessionsTable.sessionId, sessionId));
 
     if (tokensAdded > 0) {
       await tx

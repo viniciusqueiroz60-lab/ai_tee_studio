@@ -157,7 +157,23 @@ router.post("/refine", optionalAuth, requireAuth, async (req: AuthenticatedReque
     return;
   }
 
-  const newImageUrl = await refineArtworkImage(artwork.imageUrl, refinementPrompt);
+  let newImageUrl: string;
+  try {
+    newImageUrl = await refineArtworkImage(artwork.imageUrl, refinementPrompt);
+  } catch (err: unknown) {
+    // Refund token since refinement failed
+    await db
+      .update(usersTable)
+      .set({ tokenBalance: sql`${usersTable.tokenBalance} + 1` })
+      .where(eq(usersTable.id, req.user!.id));
+    const msg = err instanceof Error ? err.message : "";
+    if (msg.includes("429") || msg.includes("quota") || msg.includes("RESOURCE_EXHAUSTED")) {
+      res.status(503).json({ error: "A IA está temporariamente indisponível (cota excedida). Tente novamente mais tarde." });
+    } else {
+      res.status(503).json({ error: "Falha ao refinar imagem com IA. Tente novamente." });
+    }
+    return;
+  }
 
   const [updated] = await db
     .update(artworksTable)
