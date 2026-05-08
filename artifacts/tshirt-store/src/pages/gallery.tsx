@@ -314,6 +314,11 @@ export default function GalleryPage() {
                             </span>
                           </div>
                         </div>
+                        {artwork.createdAt && (
+                          <p className="text-white/50 text-[10px] mt-1.5">
+                            {new Date(artwork.createdAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" })}
+                          </p>
+                        )}
                       </div>
                     </div>
 

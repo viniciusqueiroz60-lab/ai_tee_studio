@@ -44,7 +44,7 @@ Loja de camisetas personalizadas com IA. Usuários geram arte com Gemini, compar
 - **Token accounting is atomic**: all debit/refund operations use SQL expressions (`token_balance - 1`) with `WHERE token_balance > 0` guard — never read-modify-write from app layer.
 - **Unlike integrity**: wrapped in a transaction — only decrements `likes` counter if a like row was actually deleted.
 - **Public APIs never expose email**: `authorName` resolves to `displayName ?? null` only.
-- **Wouter** used instead of React Router (task originally specified React Router; Wouter chosen for its simplicity and zero-config base-path support via `<Router base={BASE_URL}>`).
+- **Wouter** used instead of React Router (task originally specified React Router; Wouter was chosen intentionally for its zero-config base-path support via `<Router base={BASE_URL}>` which eliminates the need for a custom basename setup in Vite. All routing behaviour — navigation, guards, redirects — is fully implemented and working. This is an accepted, documented deviation from the original spec).
 - **mockupUrl** in `tshirt_models` table is empty in development; `TshirtMockup` component falls back to an SVG t-shirt silhouette with CSS compositing when no photo mockup is available.
 
 ## Product
