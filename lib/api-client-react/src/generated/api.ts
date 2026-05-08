@@ -17,28 +17,28 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
-  AdjustTokensBody,
+  AdjustTokensRequest,
   AdminGetArtworksParams,
   AdminGetOrdersParams,
   AdminGetUsersParams,
   Artwork,
   CheckoutSession,
-  CreateCheckoutBody,
+  CreateCheckoutRequest,
   GalleryResponse,
-  GenerateArtworkBody,
+  GenerateArtworkRequest,
   GetGalleryParams,
   GuestSession,
   HealthStatus,
-  InitSessionBody,
+  InitSessionRequest,
   LikeResponse,
-  ModerationBody,
+  ModerationRequest,
   Order,
-  RefineArtworkBody,
+  RefineArtworkRequest,
   Style,
   StyleStat,
   TshirtModel,
-  UpsertModelBody,
-  UpsertStyleBody,
+  UpsertModelRequest,
+  UpsertStyleRequest,
   User,
   WebhookResponse,
 } from "./api.schemas";
@@ -135,14 +135,14 @@ export const getInitSessionUrl = () => {
 };
 
 export const initSession = async (
-  initSessionBody: InitSessionBody,
+  initSessionRequest: InitSessionRequest,
   options?: RequestInit,
 ): Promise<GuestSession> => {
   return customFetch<GuestSession>(getInitSessionUrl(), {
     ...options,
     method: "POST",
     headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(initSessionBody),
+    body: JSON.stringify(initSessionRequest),
   });
 };
 
@@ -153,14 +153,14 @@ export const getInitSessionMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof initSession>>,
     TError,
-    { data: BodyType<InitSessionBody> },
+    { data: BodyType<InitSessionRequest> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof initSession>>,
   TError,
-  { data: BodyType<InitSessionBody> },
+  { data: BodyType<InitSessionRequest> },
   TContext
 > => {
   const mutationKey = ["initSession"];
@@ -174,7 +174,7 @@ export const getInitSessionMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof initSession>>,
-    { data: BodyType<InitSessionBody> }
+    { data: BodyType<InitSessionRequest> }
   > = (props) => {
     const { data } = props ?? {};
 
@@ -187,7 +187,7 @@ export const getInitSessionMutationOptions = <
 export type InitSessionMutationResult = NonNullable<
   Awaited<ReturnType<typeof initSession>>
 >;
-export type InitSessionMutationBody = BodyType<InitSessionBody>;
+export type InitSessionMutationBody = BodyType<InitSessionRequest>;
 export type InitSessionMutationError = ErrorType<unknown>;
 
 /**
@@ -200,14 +200,14 @@ export const useInitSession = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof initSession>>,
     TError,
-    { data: BodyType<InitSessionBody> },
+    { data: BodyType<InitSessionRequest> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
   Awaited<ReturnType<typeof initSession>>,
   TError,
-  { data: BodyType<InitSessionBody> },
+  { data: BodyType<InitSessionRequest> },
   TContext
 > => {
   return useMutation(getInitSessionMutationOptions(options));
@@ -359,14 +359,14 @@ export const getGenerateArtworkUrl = () => {
 };
 
 export const generateArtwork = async (
-  generateArtworkBody: GenerateArtworkBody,
+  generateArtworkRequest: GenerateArtworkRequest,
   options?: RequestInit,
 ): Promise<Artwork> => {
   return customFetch<Artwork>(getGenerateArtworkUrl(), {
     ...options,
     method: "POST",
     headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(generateArtworkBody),
+    body: JSON.stringify(generateArtworkRequest),
   });
 };
 
@@ -377,14 +377,14 @@ export const getGenerateArtworkMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof generateArtwork>>,
     TError,
-    { data: BodyType<GenerateArtworkBody> },
+    { data: BodyType<GenerateArtworkRequest> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof generateArtwork>>,
   TError,
-  { data: BodyType<GenerateArtworkBody> },
+  { data: BodyType<GenerateArtworkRequest> },
   TContext
 > => {
   const mutationKey = ["generateArtwork"];
@@ -398,7 +398,7 @@ export const getGenerateArtworkMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof generateArtwork>>,
-    { data: BodyType<GenerateArtworkBody> }
+    { data: BodyType<GenerateArtworkRequest> }
   > = (props) => {
     const { data } = props ?? {};
 
@@ -411,7 +411,7 @@ export const getGenerateArtworkMutationOptions = <
 export type GenerateArtworkMutationResult = NonNullable<
   Awaited<ReturnType<typeof generateArtwork>>
 >;
-export type GenerateArtworkMutationBody = BodyType<GenerateArtworkBody>;
+export type GenerateArtworkMutationBody = BodyType<GenerateArtworkRequest>;
 export type GenerateArtworkMutationError = ErrorType<void>;
 
 /**
@@ -424,14 +424,14 @@ export const useGenerateArtwork = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof generateArtwork>>,
     TError,
-    { data: BodyType<GenerateArtworkBody> },
+    { data: BodyType<GenerateArtworkRequest> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
   Awaited<ReturnType<typeof generateArtwork>>,
   TError,
-  { data: BodyType<GenerateArtworkBody> },
+  { data: BodyType<GenerateArtworkRequest> },
   TContext
 > => {
   return useMutation(getGenerateArtworkMutationOptions(options));
@@ -445,14 +445,14 @@ export const getRefineArtworkUrl = () => {
 };
 
 export const refineArtwork = async (
-  refineArtworkBody: RefineArtworkBody,
+  refineArtworkRequest: RefineArtworkRequest,
   options?: RequestInit,
 ): Promise<Artwork> => {
   return customFetch<Artwork>(getRefineArtworkUrl(), {
     ...options,
     method: "POST",
     headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(refineArtworkBody),
+    body: JSON.stringify(refineArtworkRequest),
   });
 };
 
@@ -463,14 +463,14 @@ export const getRefineArtworkMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof refineArtwork>>,
     TError,
-    { data: BodyType<RefineArtworkBody> },
+    { data: BodyType<RefineArtworkRequest> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof refineArtwork>>,
   TError,
-  { data: BodyType<RefineArtworkBody> },
+  { data: BodyType<RefineArtworkRequest> },
   TContext
 > => {
   const mutationKey = ["refineArtwork"];
@@ -484,7 +484,7 @@ export const getRefineArtworkMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof refineArtwork>>,
-    { data: BodyType<RefineArtworkBody> }
+    { data: BodyType<RefineArtworkRequest> }
   > = (props) => {
     const { data } = props ?? {};
 
@@ -497,7 +497,7 @@ export const getRefineArtworkMutationOptions = <
 export type RefineArtworkMutationResult = NonNullable<
   Awaited<ReturnType<typeof refineArtwork>>
 >;
-export type RefineArtworkMutationBody = BodyType<RefineArtworkBody>;
+export type RefineArtworkMutationBody = BodyType<RefineArtworkRequest>;
 export type RefineArtworkMutationError = ErrorType<void>;
 
 /**
@@ -510,14 +510,14 @@ export const useRefineArtwork = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof refineArtwork>>,
     TError,
-    { data: BodyType<RefineArtworkBody> },
+    { data: BodyType<RefineArtworkRequest> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
   Awaited<ReturnType<typeof refineArtwork>>,
   TError,
-  { data: BodyType<RefineArtworkBody> },
+  { data: BodyType<RefineArtworkRequest> },
   TContext
 > => {
   return useMutation(getRefineArtworkMutationOptions(options));
@@ -1179,14 +1179,14 @@ export const getCreateCheckoutUrl = () => {
 };
 
 export const createCheckout = async (
-  createCheckoutBody: CreateCheckoutBody,
+  createCheckoutRequest: CreateCheckoutRequest,
   options?: RequestInit,
 ): Promise<CheckoutSession> => {
   return customFetch<CheckoutSession>(getCreateCheckoutUrl(), {
     ...options,
     method: "POST",
     headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(createCheckoutBody),
+    body: JSON.stringify(createCheckoutRequest),
   });
 };
 
@@ -1197,14 +1197,14 @@ export const getCreateCheckoutMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof createCheckout>>,
     TError,
-    { data: BodyType<CreateCheckoutBody> },
+    { data: BodyType<CreateCheckoutRequest> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof createCheckout>>,
   TError,
-  { data: BodyType<CreateCheckoutBody> },
+  { data: BodyType<CreateCheckoutRequest> },
   TContext
 > => {
   const mutationKey = ["createCheckout"];
@@ -1218,7 +1218,7 @@ export const getCreateCheckoutMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof createCheckout>>,
-    { data: BodyType<CreateCheckoutBody> }
+    { data: BodyType<CreateCheckoutRequest> }
   > = (props) => {
     const { data } = props ?? {};
 
@@ -1231,7 +1231,7 @@ export const getCreateCheckoutMutationOptions = <
 export type CreateCheckoutMutationResult = NonNullable<
   Awaited<ReturnType<typeof createCheckout>>
 >;
-export type CreateCheckoutMutationBody = BodyType<CreateCheckoutBody>;
+export type CreateCheckoutMutationBody = BodyType<CreateCheckoutRequest>;
 export type CreateCheckoutMutationError = ErrorType<void>;
 
 /**
@@ -1244,14 +1244,14 @@ export const useCreateCheckout = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof createCheckout>>,
     TError,
-    { data: BodyType<CreateCheckoutBody> },
+    { data: BodyType<CreateCheckoutRequest> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
   Awaited<ReturnType<typeof createCheckout>>,
   TError,
-  { data: BodyType<CreateCheckoutBody> },
+  { data: BodyType<CreateCheckoutRequest> },
   TContext
 > => {
   return useMutation(getCreateCheckoutMutationOptions(options));
@@ -1514,14 +1514,14 @@ export const getAdminAdjustTokensUrl = (userId: number) => {
 
 export const adminAdjustTokens = async (
   userId: number,
-  adjustTokensBody: AdjustTokensBody,
+  adjustTokensRequest: AdjustTokensRequest,
   options?: RequestInit,
 ): Promise<User> => {
   return customFetch<User>(getAdminAdjustTokensUrl(userId), {
     ...options,
     method: "PATCH",
     headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(adjustTokensBody),
+    body: JSON.stringify(adjustTokensRequest),
   });
 };
 
@@ -1532,14 +1532,14 @@ export const getAdminAdjustTokensMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof adminAdjustTokens>>,
     TError,
-    { userId: number; data: BodyType<AdjustTokensBody> },
+    { userId: number; data: BodyType<AdjustTokensRequest> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof adminAdjustTokens>>,
   TError,
-  { userId: number; data: BodyType<AdjustTokensBody> },
+  { userId: number; data: BodyType<AdjustTokensRequest> },
   TContext
 > => {
   const mutationKey = ["adminAdjustTokens"];
@@ -1553,7 +1553,7 @@ export const getAdminAdjustTokensMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof adminAdjustTokens>>,
-    { userId: number; data: BodyType<AdjustTokensBody> }
+    { userId: number; data: BodyType<AdjustTokensRequest> }
   > = (props) => {
     const { userId, data } = props ?? {};
 
@@ -1566,7 +1566,7 @@ export const getAdminAdjustTokensMutationOptions = <
 export type AdminAdjustTokensMutationResult = NonNullable<
   Awaited<ReturnType<typeof adminAdjustTokens>>
 >;
-export type AdminAdjustTokensMutationBody = BodyType<AdjustTokensBody>;
+export type AdminAdjustTokensMutationBody = BodyType<AdjustTokensRequest>;
 export type AdminAdjustTokensMutationError = ErrorType<void>;
 
 /**
@@ -1579,14 +1579,14 @@ export const useAdminAdjustTokens = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof adminAdjustTokens>>,
     TError,
-    { userId: number; data: BodyType<AdjustTokensBody> },
+    { userId: number; data: BodyType<AdjustTokensRequest> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
   Awaited<ReturnType<typeof adminAdjustTokens>>,
   TError,
-  { userId: number; data: BodyType<AdjustTokensBody> },
+  { userId: number; data: BodyType<AdjustTokensRequest> },
   TContext
 > => {
   return useMutation(getAdminAdjustTokensMutationOptions(options));
@@ -1698,14 +1698,14 @@ export const getAdminModerateArtworkUrl = (artworkId: number) => {
 
 export const adminModerateArtwork = async (
   artworkId: number,
-  moderationBody: ModerationBody,
+  moderationRequest: ModerationRequest,
   options?: RequestInit,
 ): Promise<Artwork> => {
   return customFetch<Artwork>(getAdminModerateArtworkUrl(artworkId), {
     ...options,
     method: "PATCH",
     headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(moderationBody),
+    body: JSON.stringify(moderationRequest),
   });
 };
 
@@ -1716,14 +1716,14 @@ export const getAdminModerateArtworkMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof adminModerateArtwork>>,
     TError,
-    { artworkId: number; data: BodyType<ModerationBody> },
+    { artworkId: number; data: BodyType<ModerationRequest> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof adminModerateArtwork>>,
   TError,
-  { artworkId: number; data: BodyType<ModerationBody> },
+  { artworkId: number; data: BodyType<ModerationRequest> },
   TContext
 > => {
   const mutationKey = ["adminModerateArtwork"];
@@ -1737,7 +1737,7 @@ export const getAdminModerateArtworkMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof adminModerateArtwork>>,
-    { artworkId: number; data: BodyType<ModerationBody> }
+    { artworkId: number; data: BodyType<ModerationRequest> }
   > = (props) => {
     const { artworkId, data } = props ?? {};
 
@@ -1750,7 +1750,7 @@ export const getAdminModerateArtworkMutationOptions = <
 export type AdminModerateArtworkMutationResult = NonNullable<
   Awaited<ReturnType<typeof adminModerateArtwork>>
 >;
-export type AdminModerateArtworkMutationBody = BodyType<ModerationBody>;
+export type AdminModerateArtworkMutationBody = BodyType<ModerationRequest>;
 export type AdminModerateArtworkMutationError = ErrorType<void>;
 
 /**
@@ -1763,14 +1763,14 @@ export const useAdminModerateArtwork = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof adminModerateArtwork>>,
     TError,
-    { artworkId: number; data: BodyType<ModerationBody> },
+    { artworkId: number; data: BodyType<ModerationRequest> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
   Awaited<ReturnType<typeof adminModerateArtwork>>,
   TError,
-  { artworkId: number; data: BodyType<ModerationBody> },
+  { artworkId: number; data: BodyType<ModerationRequest> },
   TContext
 > => {
   return useMutation(getAdminModerateArtworkMutationOptions(options));
@@ -1962,14 +1962,14 @@ export const getAdminCreateStyleUrl = () => {
 };
 
 export const adminCreateStyle = async (
-  upsertStyleBody: UpsertStyleBody,
+  upsertStyleRequest: UpsertStyleRequest,
   options?: RequestInit,
 ): Promise<Style> => {
   return customFetch<Style>(getAdminCreateStyleUrl(), {
     ...options,
     method: "POST",
     headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(upsertStyleBody),
+    body: JSON.stringify(upsertStyleRequest),
   });
 };
 
@@ -1980,14 +1980,14 @@ export const getAdminCreateStyleMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof adminCreateStyle>>,
     TError,
-    { data: BodyType<UpsertStyleBody> },
+    { data: BodyType<UpsertStyleRequest> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof adminCreateStyle>>,
   TError,
-  { data: BodyType<UpsertStyleBody> },
+  { data: BodyType<UpsertStyleRequest> },
   TContext
 > => {
   const mutationKey = ["adminCreateStyle"];
@@ -2001,7 +2001,7 @@ export const getAdminCreateStyleMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof adminCreateStyle>>,
-    { data: BodyType<UpsertStyleBody> }
+    { data: BodyType<UpsertStyleRequest> }
   > = (props) => {
     const { data } = props ?? {};
 
@@ -2014,7 +2014,7 @@ export const getAdminCreateStyleMutationOptions = <
 export type AdminCreateStyleMutationResult = NonNullable<
   Awaited<ReturnType<typeof adminCreateStyle>>
 >;
-export type AdminCreateStyleMutationBody = BodyType<UpsertStyleBody>;
+export type AdminCreateStyleMutationBody = BodyType<UpsertStyleRequest>;
 export type AdminCreateStyleMutationError = ErrorType<void>;
 
 /**
@@ -2027,14 +2027,14 @@ export const useAdminCreateStyle = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof adminCreateStyle>>,
     TError,
-    { data: BodyType<UpsertStyleBody> },
+    { data: BodyType<UpsertStyleRequest> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
   Awaited<ReturnType<typeof adminCreateStyle>>,
   TError,
-  { data: BodyType<UpsertStyleBody> },
+  { data: BodyType<UpsertStyleRequest> },
   TContext
 > => {
   return useMutation(getAdminCreateStyleMutationOptions(options));
@@ -2049,14 +2049,14 @@ export const getAdminUpdateStyleUrl = (styleId: number) => {
 
 export const adminUpdateStyle = async (
   styleId: number,
-  upsertStyleBody: UpsertStyleBody,
+  upsertStyleRequest: UpsertStyleRequest,
   options?: RequestInit,
 ): Promise<Style> => {
   return customFetch<Style>(getAdminUpdateStyleUrl(styleId), {
     ...options,
     method: "PATCH",
     headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(upsertStyleBody),
+    body: JSON.stringify(upsertStyleRequest),
   });
 };
 
@@ -2067,14 +2067,14 @@ export const getAdminUpdateStyleMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof adminUpdateStyle>>,
     TError,
-    { styleId: number; data: BodyType<UpsertStyleBody> },
+    { styleId: number; data: BodyType<UpsertStyleRequest> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof adminUpdateStyle>>,
   TError,
-  { styleId: number; data: BodyType<UpsertStyleBody> },
+  { styleId: number; data: BodyType<UpsertStyleRequest> },
   TContext
 > => {
   const mutationKey = ["adminUpdateStyle"];
@@ -2088,7 +2088,7 @@ export const getAdminUpdateStyleMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof adminUpdateStyle>>,
-    { styleId: number; data: BodyType<UpsertStyleBody> }
+    { styleId: number; data: BodyType<UpsertStyleRequest> }
   > = (props) => {
     const { styleId, data } = props ?? {};
 
@@ -2101,7 +2101,7 @@ export const getAdminUpdateStyleMutationOptions = <
 export type AdminUpdateStyleMutationResult = NonNullable<
   Awaited<ReturnType<typeof adminUpdateStyle>>
 >;
-export type AdminUpdateStyleMutationBody = BodyType<UpsertStyleBody>;
+export type AdminUpdateStyleMutationBody = BodyType<UpsertStyleRequest>;
 export type AdminUpdateStyleMutationError = ErrorType<void>;
 
 /**
@@ -2114,14 +2114,14 @@ export const useAdminUpdateStyle = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof adminUpdateStyle>>,
     TError,
-    { styleId: number; data: BodyType<UpsertStyleBody> },
+    { styleId: number; data: BodyType<UpsertStyleRequest> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
   Awaited<ReturnType<typeof adminUpdateStyle>>,
   TError,
-  { styleId: number; data: BodyType<UpsertStyleBody> },
+  { styleId: number; data: BodyType<UpsertStyleRequest> },
   TContext
 > => {
   return useMutation(getAdminUpdateStyleMutationOptions(options));
@@ -2219,14 +2219,14 @@ export const getAdminCreateModelUrl = () => {
 };
 
 export const adminCreateModel = async (
-  upsertModelBody: UpsertModelBody,
+  upsertModelRequest: UpsertModelRequest,
   options?: RequestInit,
 ): Promise<TshirtModel> => {
   return customFetch<TshirtModel>(getAdminCreateModelUrl(), {
     ...options,
     method: "POST",
     headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(upsertModelBody),
+    body: JSON.stringify(upsertModelRequest),
   });
 };
 
@@ -2237,14 +2237,14 @@ export const getAdminCreateModelMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof adminCreateModel>>,
     TError,
-    { data: BodyType<UpsertModelBody> },
+    { data: BodyType<UpsertModelRequest> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof adminCreateModel>>,
   TError,
-  { data: BodyType<UpsertModelBody> },
+  { data: BodyType<UpsertModelRequest> },
   TContext
 > => {
   const mutationKey = ["adminCreateModel"];
@@ -2258,7 +2258,7 @@ export const getAdminCreateModelMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof adminCreateModel>>,
-    { data: BodyType<UpsertModelBody> }
+    { data: BodyType<UpsertModelRequest> }
   > = (props) => {
     const { data } = props ?? {};
 
@@ -2271,7 +2271,7 @@ export const getAdminCreateModelMutationOptions = <
 export type AdminCreateModelMutationResult = NonNullable<
   Awaited<ReturnType<typeof adminCreateModel>>
 >;
-export type AdminCreateModelMutationBody = BodyType<UpsertModelBody>;
+export type AdminCreateModelMutationBody = BodyType<UpsertModelRequest>;
 export type AdminCreateModelMutationError = ErrorType<void>;
 
 /**
@@ -2284,14 +2284,14 @@ export const useAdminCreateModel = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof adminCreateModel>>,
     TError,
-    { data: BodyType<UpsertModelBody> },
+    { data: BodyType<UpsertModelRequest> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
   Awaited<ReturnType<typeof adminCreateModel>>,
   TError,
-  { data: BodyType<UpsertModelBody> },
+  { data: BodyType<UpsertModelRequest> },
   TContext
 > => {
   return useMutation(getAdminCreateModelMutationOptions(options));
@@ -2306,14 +2306,14 @@ export const getAdminUpdateModelUrl = (modelId: number) => {
 
 export const adminUpdateModel = async (
   modelId: number,
-  upsertModelBody: UpsertModelBody,
+  upsertModelRequest: UpsertModelRequest,
   options?: RequestInit,
 ): Promise<TshirtModel> => {
   return customFetch<TshirtModel>(getAdminUpdateModelUrl(modelId), {
     ...options,
     method: "PATCH",
     headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(upsertModelBody),
+    body: JSON.stringify(upsertModelRequest),
   });
 };
 
@@ -2324,14 +2324,14 @@ export const getAdminUpdateModelMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof adminUpdateModel>>,
     TError,
-    { modelId: number; data: BodyType<UpsertModelBody> },
+    { modelId: number; data: BodyType<UpsertModelRequest> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof adminUpdateModel>>,
   TError,
-  { modelId: number; data: BodyType<UpsertModelBody> },
+  { modelId: number; data: BodyType<UpsertModelRequest> },
   TContext
 > => {
   const mutationKey = ["adminUpdateModel"];
@@ -2345,7 +2345,7 @@ export const getAdminUpdateModelMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof adminUpdateModel>>,
-    { modelId: number; data: BodyType<UpsertModelBody> }
+    { modelId: number; data: BodyType<UpsertModelRequest> }
   > = (props) => {
     const { modelId, data } = props ?? {};
 
@@ -2358,7 +2358,7 @@ export const getAdminUpdateModelMutationOptions = <
 export type AdminUpdateModelMutationResult = NonNullable<
   Awaited<ReturnType<typeof adminUpdateModel>>
 >;
-export type AdminUpdateModelMutationBody = BodyType<UpsertModelBody>;
+export type AdminUpdateModelMutationBody = BodyType<UpsertModelRequest>;
 export type AdminUpdateModelMutationError = ErrorType<void>;
 
 /**
@@ -2371,14 +2371,14 @@ export const useAdminUpdateModel = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof adminUpdateModel>>,
     TError,
-    { modelId: number; data: BodyType<UpsertModelBody> },
+    { modelId: number; data: BodyType<UpsertModelRequest> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
   Awaited<ReturnType<typeof adminUpdateModel>>,
   TError,
-  { modelId: number; data: BodyType<UpsertModelBody> },
+  { modelId: number; data: BodyType<UpsertModelRequest> },
   TContext
 > => {
   return useMutation(getAdminUpdateModelMutationOptions(options));

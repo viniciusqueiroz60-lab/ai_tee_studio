@@ -50,7 +50,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/InitSessionBody"
+              $ref: "#/components/schemas/InitSessionRequest"
       responses:
         "200":
           description: Session ready
@@ -99,7 +99,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/GenerateArtworkBody"
+              $ref: "#/components/schemas/GenerateArtworkRequest"
       responses:
         "201":
           description: Artwork generated
@@ -122,7 +122,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/RefineArtworkBody"
+              $ref: "#/components/schemas/RefineArtworkRequest"
       responses:
         "200":
           description: Artwork refined
@@ -307,7 +307,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateCheckoutBody"
+              $ref: "#/components/schemas/CreateCheckoutRequest"
       responses:
         "200":
           description: Checkout session created
@@ -392,7 +392,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/AdjustTokensBody"
+              $ref: "#/components/schemas/AdjustTokensRequest"
       responses:
         "200":
           description: Updated user
@@ -447,7 +447,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ModerationBody"
+              $ref: "#/components/schemas/ModerationRequest"
       responses:
         "200":
           description: Updated artwork
@@ -508,7 +508,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpsertStyleBody"
+              $ref: "#/components/schemas/UpsertStyleRequest"
       responses:
         "201":
           description: Style created
@@ -535,7 +535,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpsertStyleBody"
+              $ref: "#/components/schemas/UpsertStyleRequest"
       responses:
         "200":
           description: Updated style
@@ -571,7 +571,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpsertModelBody"
+              $ref: "#/components/schemas/UpsertModelRequest"
       responses:
         "201":
           description: Model created
@@ -598,7 +598,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpsertModelBody"
+              $ref: "#/components/schemas/UpsertModelRequest"
       responses:
         "200":
           description: Updated model
@@ -634,7 +634,7 @@ components:
       required:
         - status
 
-    InitSessionBody:
+    InitSessionRequest:
       type: object
       properties:
         sessionId:
@@ -726,7 +726,7 @@ components:
         - upscaled
         - createdAt
 
-    GenerateArtworkBody:
+    GenerateArtworkRequest:
       type: object
       properties:
         prompt:
@@ -738,7 +738,7 @@ components:
       required:
         - prompt
 
-    RefineArtworkBody:
+    RefineArtworkRequest:
       type: object
       properties:
         artworkId:
@@ -887,7 +887,7 @@ components:
         - createdAt
         - artwork
 
-    CreateCheckoutBody:
+    CreateCheckoutRequest:
       type: object
       properties:
         artworkId:
@@ -923,7 +923,7 @@ components:
       required:
         - received
 
-    AdjustTokensBody:
+    AdjustTokensRequest:
       type: object
       properties:
         delta:
@@ -933,7 +933,7 @@ components:
       required:
         - delta
 
-    ModerationBody:
+    ModerationRequest:
       type: object
       properties:
         status:
@@ -944,7 +944,7 @@ components:
       required:
         - status
 
-    UpsertStyleBody:
+    UpsertStyleRequest:
       type: object
       properties:
         slug:
@@ -968,7 +968,7 @@ components:
         - active
         - sortOrder
 
-    UpsertModelBody:
+    UpsertModelRequest:
       type: object
       properties:
         name:

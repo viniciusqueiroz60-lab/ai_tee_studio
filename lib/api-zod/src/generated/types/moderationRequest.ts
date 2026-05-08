@@ -5,10 +5,10 @@
  * AI T-Shirt Store API
  * OpenAPI spec version: 0.1.0
  */
-import type { ModerationBodyStatus } from "./moderationBodyStatus";
+import type { ModerationRequestStatus } from "./moderationRequestStatus";
 
-export interface ModerationBody {
-  status: ModerationBodyStatus;
+export interface ModerationRequest {
+  status: ModerationRequestStatus;
   /** @nullable */
   reason?: string | null;
 }

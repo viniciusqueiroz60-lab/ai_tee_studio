@@ -6,9 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface CreateCheckoutBody {
-  artworkId: number;
-  modelId: number;
-  color: string;
-  size: string;
+export interface InitSessionRequest {
+  /** @nullable */
+  sessionId?: string | null;
 }

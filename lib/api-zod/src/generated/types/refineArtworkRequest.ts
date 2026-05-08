@@ -6,7 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface InitSessionBody {
-  /** @nullable */
-  sessionId?: string | null;
+export interface RefineArtworkRequest {
+  artworkId: number;
+  refinementPrompt: string;
 }

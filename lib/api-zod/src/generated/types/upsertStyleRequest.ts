@@ -6,7 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface UpsertStyleBody {
+export interface UpsertStyleRequest {
   slug: string;
   label: string;
   /** @nullable */

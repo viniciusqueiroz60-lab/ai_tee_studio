@@ -6,7 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface UpsertModelBody {
+export interface UpsertModelRequest {
   name: string;
   /** @nullable */
   description?: string | null;

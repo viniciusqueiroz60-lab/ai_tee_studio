@@ -6,7 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export * from "./adjustTokensBody";
+export * from "./adjustTokensRequest";
 export * from "./adminGetArtworksParams";
 export * from "./adminGetArtworksStatus";
 export * from "./adminGetOrdersParams";
@@ -14,25 +14,25 @@ export * from "./adminGetUsersParams";
 export * from "./artwork";
 export * from "./artworkModerationStatus";
 export * from "./checkoutSession";
-export * from "./createCheckoutBody";
+export * from "./createCheckoutRequest";
 export * from "./galleryResponse";
-export * from "./generateArtworkBody";
+export * from "./generateArtworkRequest";
 export * from "./getGalleryParams";
 export * from "./getGallerySort";
 export * from "./guestSession";
 export * from "./healthStatus";
-export * from "./initSessionBody";
+export * from "./initSessionRequest";
 export * from "./likeResponse";
-export * from "./moderationBody";
-export * from "./moderationBodyStatus";
+export * from "./moderationRequest";
+export * from "./moderationRequestStatus";
 export * from "./order";
 export * from "./orderStatus";
-export * from "./refineArtworkBody";
+export * from "./refineArtworkRequest";
 export * from "./style";
 export * from "./styleStat";
 export * from "./tshirtModel";
-export * from "./upsertModelBody";
-export * from "./upsertStyleBody";
+export * from "./upsertModelRequest";
+export * from "./upsertStyleRequest";
 export * from "./user";
 export * from "./userRole";
 export * from "./webhookResponse";

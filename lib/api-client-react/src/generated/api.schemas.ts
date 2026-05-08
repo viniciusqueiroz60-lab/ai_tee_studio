@@ -9,7 +9,7 @@ export interface HealthStatus {
   status: string;
 }
 
-export interface InitSessionBody {
+export interface InitSessionRequest {
   /** @nullable */
   sessionId?: string | null;
 }
@@ -79,7 +79,7 @@ export interface Artwork {
   createdAt: string;
 }
 
-export interface GenerateArtworkBody {
+export interface GenerateArtworkRequest {
   prompt: string;
   /** @nullable */
   styleSlug?: string | null;
@@ -87,7 +87,7 @@ export interface GenerateArtworkBody {
   sessionId?: string | null;
 }
 
-export interface RefineArtworkBody {
+export interface RefineArtworkRequest {
   artworkId: number;
   refinementPrompt: string;
 }
@@ -160,7 +160,7 @@ export interface Order {
   artwork: Artwork;
 }
 
-export interface CreateCheckoutBody {
+export interface CreateCheckoutRequest {
   artworkId: number;
   modelId: number;
   color: string;
@@ -176,27 +176,27 @@ export interface WebhookResponse {
   received: boolean;
 }
 
-export interface AdjustTokensBody {
+export interface AdjustTokensRequest {
   delta: number;
   /** @nullable */
   reason?: string | null;
 }
 
-export type ModerationBodyStatus =
-  (typeof ModerationBodyStatus)[keyof typeof ModerationBodyStatus];
+export type ModerationRequestStatus =
+  (typeof ModerationRequestStatus)[keyof typeof ModerationRequestStatus];
 
-export const ModerationBodyStatus = {
+export const ModerationRequestStatus = {
   approved: "approved",
   rejected: "rejected",
 } as const;
 
-export interface ModerationBody {
-  status: ModerationBodyStatus;
+export interface ModerationRequest {
+  status: ModerationRequestStatus;
   /** @nullable */
   reason?: string | null;
 }
 
-export interface UpsertStyleBody {
+export interface UpsertStyleRequest {
   slug: string;
   label: string;
   /** @nullable */
@@ -208,7 +208,7 @@ export interface UpsertStyleBody {
   sortOrder: number;
 }
 
-export interface UpsertModelBody {
+export interface UpsertModelRequest {
   name: string;
   /** @nullable */
   description?: string | null;

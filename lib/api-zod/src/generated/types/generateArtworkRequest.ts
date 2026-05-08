@@ -6,8 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface AdjustTokensBody {
-  delta: number;
+export interface GenerateArtworkRequest {
+  prompt: string;
   /** @nullable */
-  reason?: string | null;
+  styleSlug?: string | null;
+  /** @nullable */
+  sessionId?: string | null;
 }

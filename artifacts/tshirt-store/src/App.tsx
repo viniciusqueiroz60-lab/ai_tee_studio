@@ -1,40 +1,62 @@
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { GuestSessionProvider } from "@/contexts/GuestSessionContext";
+import { Navbar } from "@/components/Navbar";
 import NotFound from "@/pages/not-found";
+import HomePage from "@/pages/home";
+import AuthPage from "@/pages/auth";
+import CreatePage from "@/pages/create";
+import GalleryPage from "@/pages/gallery";
+import ProductPage from "@/pages/product";
+import OrdersPage from "@/pages/orders";
+import MyArtworksPage from "@/pages/my-artworks";
+import AdminPage from "@/pages/admin/index";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30_000,
+      retry: 1,
+    },
+  },
+});
 
-function Home() {
+const BASE_URL = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+function AppRoutes() {
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gray-50">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold text-gray-900">Replit Agent is building...</h1>
-        <p className="mt-2 text-sm text-gray-600">Your app will appear here once it's ready.</p>
-      </div>
+    <div className="flex flex-col min-h-screen">
+      <Navbar />
+      <main className="flex-1">
+        <Switch>
+          <Route path="/" component={HomePage} />
+          <Route path="/auth" component={AuthPage} />
+          <Route path="/create" component={CreatePage} />
+          <Route path="/gallery" component={GalleryPage} />
+          <Route path="/product/:id" component={ProductPage} />
+          <Route path="/orders" component={OrdersPage} />
+          <Route path="/my-artworks" component={MyArtworksPage} />
+          <Route path="/admin" component={AdminPage} />
+          <Route component={NotFound} />
+        </Switch>
+      </main>
     </div>
-  );
-}
-
-function Router() {
-  return (
-    <Switch>
-      <Route path="/" component={Home} />
-      <Route component={NotFound} />
-    </Switch>
   );
 }
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <Router />
-        </WouterRouter>
-        <Toaster />
-      </TooltipProvider>
+      <AuthProvider>
+        <GuestSessionProvider>
+          <WouterRouter base={BASE_URL}>
+            <AppRoutes />
+          </WouterRouter>
+          <Toaster />
+        </GuestSessionProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

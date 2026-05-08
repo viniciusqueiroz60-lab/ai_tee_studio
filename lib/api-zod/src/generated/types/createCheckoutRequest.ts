@@ -6,7 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface RefineArtworkBody {
+export interface CreateCheckoutRequest {
   artworkId: number;
-  refinementPrompt: string;
+  modelId: number;
+  color: string;
+  size: string;
 }

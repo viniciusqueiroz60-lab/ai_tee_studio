@@ -6,10 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type ModerationBodyStatus =
-  (typeof ModerationBodyStatus)[keyof typeof ModerationBodyStatus];
+export type ModerationRequestStatus =
+  (typeof ModerationRequestStatus)[keyof typeof ModerationRequestStatus];
 
-export const ModerationBodyStatus = {
+export const ModerationRequestStatus = {
   approved: "approved",
   rejected: "rejected",
 } as const;
