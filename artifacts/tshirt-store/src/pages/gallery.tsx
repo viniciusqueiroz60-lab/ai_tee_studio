@@ -1,9 +1,17 @@
 import { useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useGetGallery, useGetStyles } from "@workspace/api-client-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { apiJson } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -11,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Heart, Eye, ShoppingCart, TrendingUp, Clock } from "lucide-react";
+import { Heart, Eye, ShoppingCart, TrendingUp, Clock, Loader2, X } from "lucide-react";
 import { motion } from "framer-motion";
 
 const STYLE_EMOJIS: Record<string, string> = {
@@ -22,9 +30,146 @@ const STYLE_EMOJIS: Record<string, string> = {
   "vector-pop-art": "🎨",
 };
 
+interface GalleryArtwork {
+  id: number;
+  userId: number | null;
+  prompt: string;
+  styleSlug: string | null;
+  styleLabel: string | null;
+  imageUrl: string;
+  likes: number;
+  views: number;
+  authorName: string | null;
+  createdAt: string;
+}
+
+interface ArtworkDetailModalProps {
+  artwork: GalleryArtwork | null;
+  onClose: () => void;
+}
+
+function ArtworkDetailModal({ artwork, onClose }: ArtworkDetailModalProps) {
+  const { user } = useAuth();
+  const [, navigate] = useLocation();
+  const [likes, setLikes] = useState(artwork?.likes ?? 0);
+  const [liked, setLiked] = useState(false);
+  const [liking, setLiking] = useState(false);
+
+  if (!artwork) return null;
+
+  async function handleLike() {
+    if (!artwork) return;
+    if (!user) {
+      navigate("/auth");
+      return;
+    }
+    setLiking(true);
+    try {
+      if (liked) {
+        const res = await apiJson<{ likes: number; liked: boolean }>(
+          `/artworks/${artwork.id}/like`,
+          { method: "DELETE" }
+        );
+        setLikes(res.likes);
+        setLiked(false);
+      } else {
+        const res = await apiJson<{ likes: number; liked: boolean }>(
+          `/artworks/${artwork.id}/like`,
+          { method: "POST" }
+        );
+        setLikes(res.likes);
+        setLiked(true);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setLiking(false);
+    }
+  }
+
+  function handleOrder() {
+    onClose();
+    if (!user) {
+      navigate("/auth");
+    } else {
+      navigate(`/product/${artwork!.id}`);
+    }
+  }
+
+  return (
+    <Dialog open={!!artwork} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className="max-w-2xl p-0 overflow-hidden">
+        <div className="grid sm:grid-cols-2">
+          {/* Image */}
+          <div className="relative bg-muted aspect-square sm:aspect-auto">
+            <img
+              src={artwork.imageUrl}
+              alt={artwork.prompt}
+              className="w-full h-full object-cover"
+            />
+          </div>
+
+          {/* Info */}
+          <div className="p-6 flex flex-col gap-4">
+            <DialogHeader>
+              <DialogTitle className="text-base font-semibold leading-snug">
+                {artwork.prompt}
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="flex flex-wrap items-center gap-2">
+              {artwork.styleLabel && (
+                <Badge variant="secondary">{artwork.styleLabel}</Badge>
+              )}
+              {artwork.authorName && (
+                <span className="text-xs text-muted-foreground">
+                  por {artwork.authorName}
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <span className="flex items-center gap-1.5">
+                <Heart className={`w-4 h-4 ${liked ? "fill-red-500 text-red-500" : ""}`} />
+                {likes}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Eye className="w-4 h-4" />
+                {artwork.views}
+              </span>
+            </div>
+
+            <div className="mt-auto space-y-3">
+              <Button
+                variant="outline"
+                className="w-full gap-2"
+                onClick={handleLike}
+                disabled={liking}
+              >
+                {liking ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Heart className={`w-4 h-4 ${liked ? "fill-red-500 text-red-500" : ""}`} />
+                )}
+                {liked ? "Curtido!" : "Curtir design"}
+              </Button>
+
+              <Button className="w-full gap-2" onClick={handleOrder}>
+                <ShoppingCart className="w-4 h-4" />
+                Quero este design
+              </Button>
+            </div>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function GalleryPage() {
   const [selectedStyle, setSelectedStyle] = useState<string>("all");
   const [sort, setSort] = useState<"recent" | "popular">("recent");
+  const [activeArtwork, setActiveArtwork] = useState<GalleryArtwork | null>(null);
 
   const { data: styles } = useGetStyles();
   const { data: gallery, isLoading } = useGetGallery({
@@ -33,12 +178,11 @@ export default function GalleryPage() {
     limit: 24,
   });
 
-  const artworks = gallery?.artworks ?? [];
+  const artworks = (gallery?.artworks ?? []) as GalleryArtwork[];
 
   return (
     <div className="min-h-screen py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-black mb-2">Galeria da Comunidade</h1>
           <p className="text-muted-foreground">Designs criados com IA pela nossa comunidade</p>
@@ -46,7 +190,6 @@ export default function GalleryPage() {
 
         {/* Filters */}
         <div className="flex flex-wrap items-center gap-3 mb-8">
-          {/* Style tabs */}
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setSelectedStyle("all")}
@@ -126,7 +269,10 @@ export default function GalleryPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: i * 0.04 }}
               >
-                <Link href={`/product/${artwork.id}`}>
+                <button
+                  className="w-full text-left"
+                  onClick={() => setActiveArtwork(artwork)}
+                >
                   <div className="group relative rounded-2xl overflow-hidden border border-border bg-card aspect-square cursor-pointer hover:shadow-xl hover:border-primary/30 transition-all duration-300">
                     <img
                       src={artwork.imageUrl}
@@ -162,19 +308,23 @@ export default function GalleryPage() {
                       </div>
                     </div>
                   </div>
-                </Link>
+                </button>
               </motion.div>
             ))}
           </div>
         )}
 
-        {/* Stats */}
         {gallery && gallery.total > 0 && (
           <p className="text-center text-sm text-muted-foreground mt-8">
             Mostrando {artworks.length} de {gallery.total} designs
           </p>
         )}
       </div>
+
+      <ArtworkDetailModal
+        artwork={activeArtwork}
+        onClose={() => setActiveArtwork(null)}
+      />
     </div>
   );
 }

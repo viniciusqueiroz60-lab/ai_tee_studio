@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGuestSession } from "@/contexts/GuestSessionContext";
@@ -7,11 +7,17 @@ import { useGetStyles } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
   Zap, Loader2, Wand2, RefreshCw, ShoppingCart,
-  Share2, AlertCircle, Lock, ChevronLeft, ChevronRight
+  Share2, AlertCircle, Lock, Sparkles,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "wouter";
@@ -33,6 +39,71 @@ interface GeneratedArtwork {
   isShared: boolean;
 }
 
+// Shown when a guest tries a gated action: refine, share, order
+function GuestConversionModal({
+  open,
+  onClose,
+  action,
+}: {
+  open: boolean;
+  onClose: () => void;
+  action: "refine" | "share" | "order";
+}) {
+  const [, navigate] = useLocation();
+
+  const messages: Record<string, { title: string; body: string }> = {
+    refine: {
+      title: "Refine seu design",
+      body: "Crie uma conta grátis para refinar seu design com IA e ganhar mais tokens.",
+    },
+    share: {
+      title: "Compartilhe na galeria",
+      body: "Crie uma conta grátis para compartilhar seu design com a comunidade.",
+    },
+    order: {
+      title: "Peça sua camiseta",
+      body: "Crie uma conta grátis para finalizar seu pedido e receber a camiseta em casa.",
+    },
+  };
+
+  const { title, body } = messages[action];
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
+            <Sparkles className="w-6 h-6 text-primary" />
+          </div>
+          <DialogTitle className="text-center">{title}</DialogTitle>
+          <DialogDescription className="text-center">{body}</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3 pt-2">
+          <Button
+            className="w-full"
+            onClick={() => {
+              onClose();
+              navigate("/auth?mode=signup");
+            }}
+          >
+            Criar conta grátis
+          </Button>
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={() => {
+              onClose();
+              navigate("/auth");
+            }}
+          >
+            Já tenho conta — Entrar
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function CreatePage() {
   const { user, tokenBalance, refreshUser } = useAuth();
   const { session, refreshSession } = useGuestSession();
@@ -47,10 +118,10 @@ export default function CreatePage() {
   const [refinementPrompt, setRefinementPrompt] = useState("");
   const [shared, setShared] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [conversionModal, setConversionModal] = useState<"refine" | "share" | "order" | null>(null);
 
   const { data: styles } = useGetStyles();
 
-  // Read style from URL param
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const style = params.get("style");
@@ -67,7 +138,7 @@ export default function CreatePage() {
     setGenerating(true);
     setError(null);
     try {
-      const body: any = { prompt: prompt.trim() };
+      const body: Record<string, string> = { prompt: prompt.trim() };
       if (selectedStyle) body.styleSlug = selectedStyle;
       if (!user && session) body.sessionId = session.sessionId;
 
@@ -80,8 +151,8 @@ export default function CreatePage() {
       setShared(result.isShared);
       if (user) await refreshUser();
       else await refreshSession();
-    } catch (e: any) {
-      setError(e.message ?? "Erro ao gerar design");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Erro ao gerar design");
     } finally {
       setGenerating(false);
     }
@@ -89,7 +160,7 @@ export default function CreatePage() {
 
   async function handleRefine() {
     if (!artwork || !refinementPrompt.trim()) return;
-    if (!user) { navigate("/auth"); return; }
+    if (!user) { setConversionModal("refine"); return; }
 
     setRefining(true);
     setError(null);
@@ -101,8 +172,8 @@ export default function CreatePage() {
       setArtwork(result);
       setRefinementPrompt("");
       await refreshUser();
-    } catch (e: any) {
-      setError(e.message ?? "Erro ao refinar design");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Erro ao refinar design");
     } finally {
       setRefining(false);
     }
@@ -110,17 +181,23 @@ export default function CreatePage() {
 
   async function handleShare() {
     if (!artwork) return;
-    if (!user) { navigate("/auth"); return; }
+    if (!user) { setConversionModal("share"); return; }
 
     setSharing(true);
     try {
       await apiJson(`/artworks/${artwork.id}/share`, { method: "POST" });
       setShared(true);
-    } catch (e: any) {
-      setError(e.message ?? "Erro ao compartilhar");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Erro ao compartilhar");
     } finally {
       setSharing(false);
     }
+  }
+
+  function handleOrder() {
+    if (!artwork) return;
+    if (!user) { setConversionModal("order"); return; }
+    navigate(`/product/${artwork.id}`);
   }
 
   return (
@@ -218,7 +295,7 @@ export default function CreatePage() {
               )}
             </Button>
 
-            {/* Refinement (auth-gated) */}
+            {/* Refinement */}
             {artwork && (
               <div className="space-y-3">
                 <div className="relative">
@@ -238,8 +315,8 @@ export default function CreatePage() {
                     <p className="text-sm text-muted-foreground mb-3">
                       Entre para refinar seu design com IA
                     </p>
-                    <Button variant="outline" size="sm" asChild>
-                      <Link href="/auth">Entrar / Cadastrar</Link>
+                    <Button variant="outline" size="sm" onClick={() => setConversionModal("refine")}>
+                      Entrar / Cadastrar
                     </Button>
                   </div>
                 ) : (
@@ -329,13 +406,7 @@ export default function CreatePage() {
                       )}
                       {shared ? "Compartilhado!" : "Compartilhar"}
                     </Button>
-                    <Button
-                      className="gap-2"
-                      onClick={() => {
-                        if (!user) navigate("/auth");
-                        else navigate(`/product/${artwork.id}`);
-                      }}
-                    >
+                    <Button className="gap-2" onClick={handleOrder}>
                       <ShoppingCart className="w-4 h-4" />
                       Pedir camiseta
                     </Button>
@@ -368,6 +439,14 @@ export default function CreatePage() {
           </div>
         </div>
       </div>
+
+      {conversionModal && (
+        <GuestConversionModal
+          open={true}
+          action={conversionModal}
+          onClose={() => setConversionModal(null)}
+        />
+      )}
     </div>
   );
 }

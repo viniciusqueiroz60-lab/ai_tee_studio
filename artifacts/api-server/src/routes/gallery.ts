@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db, artworksTable, usersTable, stylesTable } from "@workspace/db";
-import { eq, desc, and, sql, asc, count } from "drizzle-orm";
+import { eq, desc, and, asc, count } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -16,7 +16,7 @@ router.get("/gallery", async (req, res): Promise<void> => {
   const conditions = [
     eq(artworksTable.isShared, true),
     eq(artworksTable.moderationStatus, "approved"),
-  ];
+  ] as ReturnType<typeof eq>[];
 
   if (style && style !== "all") {
     conditions.push(eq(artworksTable.styleSlug, style));
@@ -41,7 +41,7 @@ router.get("/gallery", async (req, res): Promise<void> => {
     .from(artworksTable)
     .where(whereClause);
 
-  const userIds = artworks.map((a) => a.userId).filter(Boolean) as number[];
+  const userIds = artworks.map((a) => a.userId).filter((id): id is number => id != null);
   const users = userIds.length > 0
     ? await db.select({ id: usersTable.id, displayName: usersTable.displayName, email: usersTable.email }).from(usersTable)
     : [];
@@ -52,9 +52,7 @@ router.get("/gallery", async (req, res): Promise<void> => {
     artworks: artworks.map((a) => ({
       id: a.id,
       userId: a.userId,
-      guestSessionId: a.guestSessionId,
       prompt: a.prompt,
-      enrichedPrompt: a.enrichedPrompt,
       styleSlug: a.styleSlug,
       styleLabel: a.styleLabel,
       imageUrl: a.imageUrl,
@@ -63,7 +61,7 @@ router.get("/gallery", async (req, res): Promise<void> => {
       likes: a.likes,
       views: a.views,
       upscaled: a.upscaled,
-      authorName: a.userId ? (userMap.get(a.userId) ?? null) : null,
+      authorName: a.userId != null ? (userMap.get(a.userId) ?? null) : null,
       createdAt: a.createdAt.toISOString(),
     })),
     total,
@@ -72,7 +70,8 @@ router.get("/gallery", async (req, res): Promise<void> => {
   });
 });
 
-router.get("/gallery/stats", async (_req, res): Promise<void> => {
+// /gallery/styles — per-style public artwork counts
+router.get("/gallery/styles", async (_req, res): Promise<void> => {
   const styles = await db
     .select()
     .from(stylesTable)
@@ -91,7 +90,12 @@ router.get("/gallery/stats", async (_req, res): Promise<void> => {
             eq(artworksTable.moderationStatus, "approved")
           )
         );
-      return { styleSlug: style.slug, styleLabel: style.label, count: cnt };
+      return {
+        styleSlug: style.slug,
+        styleLabel: style.label,
+        icon: style.icon,
+        count: cnt,
+      };
     })
   );
 

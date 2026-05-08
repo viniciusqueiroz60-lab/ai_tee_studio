@@ -1,13 +1,14 @@
 import { Router, type IRouter } from "express";
 import { db, artworksTable, usersTable, guestSessionsTable, stylesTable, artworkLikesTable } from "@workspace/db";
-import { eq, desc, asc, and, sql } from "drizzle-orm";
+import type { Artwork } from "@workspace/db";
+import { eq, desc, and, sql } from "drizzle-orm";
 import { optionalAuth, requireAuth, type AuthenticatedRequest } from "../middlewares/auth";
 import { generateArtworkImage, refineArtworkImage, buildEnrichedPrompt } from "../lib/gemini";
 import { GenerateArtworkBody, RefineArtworkBody } from "@workspace/api-zod";
 
 const router: IRouter = Router();
 
-function formatArtwork(artwork: any, authorName?: string | null) {
+function formatArtwork(artwork: Artwork, authorName?: string | null) {
   return {
     id: artwork.id,
     userId: artwork.userId,
@@ -87,7 +88,7 @@ router.post("/generate", optionalAuth, async (req: AuthenticatedRequest, res): P
   let imageUrl: string;
   try {
     imageUrl = await generateArtworkImage(prompt, promptParams);
-  } catch (err: any) {
+  } catch (err: unknown) {
     // Refund the token since generation failed
     if (req.user) {
       await db.update(usersTable).set({ tokenBalance: req.user.tokenBalance }).where(eq(usersTable.id, req.user.id));
@@ -97,7 +98,7 @@ router.post("/generate", optionalAuth, async (req: AuthenticatedRequest, res): P
         await db.update(guestSessionsTable).set({ tokenBalance: session.tokenBalance + 1 }).where(eq(guestSessionsTable.sessionId, sessionId));
       }
     }
-    const msg: string = err?.message ?? "";
+    const msg = err instanceof Error ? err.message : "";
     if (msg.includes("429") || msg.includes("quota") || msg.includes("RESOURCE_EXHAUSTED")) {
       res.status(503).json({ error: "A IA está temporariamente indisponível (cota excedida). Tente novamente mais tarde." });
     } else {
@@ -169,7 +170,14 @@ router.get("/artworks/:artworkId", optionalAuth, async (req: AuthenticatedReques
   const [artwork] = await db.select().from(artworksTable).where(eq(artworksTable.id, id));
   if (!artwork) { res.status(404).json({ error: "Not found" }); return; }
 
-  // Increment views
+  // Access control: requester must be the owner OR artwork must be public+approved
+  const isOwner = req.user != null && req.user.id === artwork.userId;
+  const isPublic = artwork.isShared && artwork.moderationStatus === "approved";
+  if (!isOwner && !isPublic) {
+    res.status(404).json({ error: "Not found" });
+    return;
+  }
+
   await db.update(artworksTable).set({ views: artwork.views + 1 }).where(eq(artworksTable.id, id));
 
   let authorName: string | null = null;
@@ -204,11 +212,11 @@ router.post("/artworks/:artworkId/like", optionalAuth, requireAuth, async (req: 
     await db.insert(artworkLikesTable).values({ userId: req.user!.id, artworkId });
     await db.update(artworksTable).set({ likes: sql`${artworksTable.likes} + 1` }).where(eq(artworksTable.id, artworkId));
   } catch (_e) {
-    // Already liked, ignore
+    // Already liked, ignore duplicate key
   }
 
-  const [artwork] = await db.select({ likes: artworksTable.likes }).from(artworksTable).where(eq(artworksTable.id, artworkId));
-  res.json({ likes: artwork?.likes ?? 0, liked: true });
+  const [art] = await db.select({ likes: artworksTable.likes }).from(artworksTable).where(eq(artworksTable.id, artworkId));
+  res.json({ likes: art?.likes ?? 0, liked: true });
 });
 
 router.delete("/artworks/:artworkId/like", optionalAuth, requireAuth, async (req: AuthenticatedRequest, res): Promise<void> => {
@@ -219,8 +227,8 @@ router.delete("/artworks/:artworkId/like", optionalAuth, requireAuth, async (req
   );
   await db.update(artworksTable).set({ likes: sql`GREATEST(${artworksTable.likes} - 1, 0)` }).where(eq(artworksTable.id, artworkId));
 
-  const [artwork] = await db.select({ likes: artworksTable.likes }).from(artworksTable).where(eq(artworksTable.id, artworkId));
-  res.json({ likes: artwork?.likes ?? 0, liked: false });
+  const [art] = await db.select({ likes: artworksTable.likes }).from(artworksTable).where(eq(artworksTable.id, artworkId));
+  res.json({ likes: art?.likes ?? 0, liked: false });
 });
 
 export default router;

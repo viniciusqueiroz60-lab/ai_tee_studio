@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=480, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Nano Banana - Crie sua Camiseta Única</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css" rel="stylesheet">
+    <style>
+        @font-face {
+            font-family: 'AlibabaSans';
+            src: url('https://assets-persist.lovart.ai/agent-static-assets/AlibabaSans-Regular.otf') format('opentype');
+            font-weight: 400;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'AlibabaSans';
+            src: url('https://assets-persist.lovart.ai/agent-static-assets/AlibabaSans-Medium.otf') format('opentype');
+            font-weight: 500;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'AlimamaShuHeiTi';
+            src: url('https://assets-persist.lovart.ai/agent-static-assets/AlimamaShuHeiTi-Bold.otf') format('opentype');
+            font-weight: 700;
+            font-style: normal;
+        }
+
+        :root {
+            --bg-color: #FAF9F7;
+            --text-color: #2D2D2D;
+            --primary-color: #C75B3A;
+            --card-bg: #FFFFFF;
+            --border-color: #E8E6E1;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --radius-full: 999px;
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
+            --shadow-bottom: 0 -2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'AlibabaSans', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            width: 480px;
+            margin: 0 auto;
+            position: relative;
+            padding-bottom: 80px; /* Space for bottom nav */
+            overflow-x: hidden;
+        }
+
+        /* Typography */
+        h1 {
+            font-family: 'AlimamaShuHeiTi', sans-serif;
+            font-size: 28px;
+            line-height: 1.2;
+            margin-bottom: 8px;
+        }
+        h2 {
+            font-size: 20px;
+            font-weight: 500;
+            margin-bottom: 16px;
+        }
+        p {
+            font-size: 14px;
+            line-height: 1.5;
+            color: #666;
+        }
+
+        /* Layout utilities */
+        .container {
+            padding: 0 16px;
+        }
+        .section-gap {
+            margin-top: 24px;
+        }
+        .flex {
+            display: flex;
+        }
+        .flex-col {
+            flex-direction: column;
+        }
+        .items-center {
+            align-items: center;
+        }
+        .justify-between {
+            justify-content: space-between;
+        }
+        .justify-center {
+            justify-content: center;
+        }
+        .gap-2 { gap: 8px; }
+        .gap-3 { gap: 12px; }
+        .gap-4 { gap: 16px; }
+
+        /* Header */
+        header {
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            background: var(--bg-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .logo {
+            font-family: 'AlimamaShuHeiTi', sans-serif;
+            font-size: 20px;
+            color: var(--text-color);
+        }
+        .token-counter {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--card-bg);
+            padding: 6px 12px;
+            border-radius: var(--radius-full);
+            font-size: 14px;
+            font-weight: 500;
+            border: 1px solid var(--border-color);
+        }
+        .token-counter i {
+            color: #F59E0B;
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 24px 16px;
+        }
+        .prompt-input-wrapper {
+            margin-top: 16px;
+            position: relative;
+        }
+        .prompt-input {
+            width: 100%;
+            height: 120px;
+            padding: 16px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-family: inherit;
+            font-size: 14px;
+            resize: none;
+            background: var(--card-bg);
+            outline: none;
+        }
+        .prompt-input:focus {
+            border-color: var(--primary-color);
+        }
+        .btn-primary {
+            width: 100%;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: var(--radius-md);
+            font-size: 16px;
+            font-weight: 500;
+            margin-top: 12px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Creation Section */
+        .creation-grid {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 16px;
+            margin-top: 24px;
+            padding: 0 16px;
+        }
+        .preview-card {
+            background: var(--card-bg);
+            border-radius: var(--radius-lg);
+            padding: 12px;
+            box-shadow: var(--shadow-sm);
+        }
+        .preview-img-placeholder {
+            width: 100%;
+            aspect-ratio: 1;
+            background: #f0f0f0;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-size: 12px;
+            text-align: center;
+            padding: 16px;
+            border: 1px dashed var(--border-color);
+        }
+        .action-btns {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            justify-content: center;
+        }
+        .icon-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: var(--radius-full);
+            border: 1px solid var(--border-color);
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-color);
+            cursor: pointer;
+        }
+        
+        .refinement-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .panel-title {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+        
+        /* Slider */
+        .slider-container {
+            width: 100%;
+        }
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 4px;
+        }
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            cursor: pointer;
+            margin-top: -6px;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: var(--border-color);
+            border-radius: 2px;
+        }
+
+        /* Style Pills */
+        .pills-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .pill {
+            padding: 6px 10px;
+            border-radius: var(--radius-full);
+            border: 1px solid var(--border-color);
+            font-size: 11px;
+            background: white;
+            cursor: pointer;
+        }
+        .pill.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        /* Color Picker */
+        .color-picker {
+            display: flex;
+            gap: 8px;
+        }
+        .color-circle {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            cursor: pointer;
+        }
+        .color-circle.active {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 1px white inset;
+        }
+
+        /* Mockup Section */
+        .mockup-section {
+            padding: 24px 16px;
+        }
+        .mockup-card {
+            background: var(--card-bg);
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            box-shadow: var(--shadow-sm);
+        }
+        .mockup-img {
+            width: 100%;
+            height: 200px;
+            background: #F8F8F8;
+            border-radius: var(--radius-md);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ccc;
+        }
+        
+        .size-selector {
+            display: flex;
+            gap: 8px;
+            margin: 12px 0;
+        }
+        .size-btn {
+            flex: 1;
+            padding: 8px 0;
+            text-align: center;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            background: white;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .size-btn.active {
+            border-color: var(--text-color);
+            background: var(--text-color);
+            color: white;
+        }
+
+        .price-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border-color);
+        }
+        .price {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        /* Community Gallery */
+        .gallery {
+            padding: 24px 16px 40px;
+        }
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-top: 16px;
+        }
+        .gallery-card {
+            background: var(--card-bg);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+        }
+        .gallery-img {
+            width: 100%;
+            aspect-ratio: 1;
+            background: #EEE;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-size: 12px;
+        }
+        .gallery-info {
+            padding: 8px;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 480px;
+            height: 70px;
+            background: var(--card-bg);
+            box-shadow: var(--shadow-bottom);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 100;
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            color: #999;
+            font-size: 10px;
+            cursor: pointer;
+            width: 60px;
+        }
+        .nav-item.active {
+            color: var(--text-color);
+        }
+        .nav-item i {
+            font-size: 24px;
+        }
+        .nav-create {
+            position: relative;
+            top: -15px;
+        }
+        .nav-create .create-btn {
+            width: 50px;
+            height: 50px;
+            background: var(--primary-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            box-shadow: 0 4px 12px rgba(199, 91, 58, 0.4);
+        }
+        .nav-create .create-btn i {
+            font-size: 28px;
+        }
+        
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <div class="logo">NANO BANANA</div>
+        <div class="token-counter">
+            <i class="ri-copper-coin-line"></i>
+            <span>750</span>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <h1>Crie sua Camiseta Única</h1>
+        <p>Descreva sua ideia e nossa IA cria para você</p>
+        
+        <div class="prompt-input-wrapper">
+            <textarea class="prompt-input" placeholder="Ex: Um astronauta surfando em Saturno..."></textarea>
+        </div>
+        <button class="btn-primary">
+            <i class="ri-magic-line"></i> Gerar Design
+        </button>
+    </section>
+
+    <!-- Creation Section -->
+    <section class="creation-grid">
+        <!-- Left: Preview -->
+        <div class="preview-card">
+            <div class="preview-img-placeholder">
+                [Preview: Astronauta surfando em Saturno]
+            </div>
+            <div class="action-btns">
+                <button class="icon-btn"><i class="ri-refresh-line"></i></button>
+                <button class="icon-btn"><i class="ri-download-2-line"></i></button>
+                <button class="icon-btn"><i class="ri-heart-line"></i></button>
+            </div>
+        </div>
+
+        <!-- Right: Refinement -->
+        <div class="refinement-panel">
+            <div>
+                <div class="slider-label">
+                    <span>Detalhe</span>
+                    <span>80%</span>
+                </div>
+                <div class="slider-container">
+                    <input type="range" min="1" max="100" value="80">
+                </div>
+            </div>
+
+            <div>
+                <div class="panel-title">Estilo</div>
+                <div class="pills-grid">
+                    <div class="pill active">Ilustração</div>
+                    <div class="pill">Minimalista</div>
+                    <div class="pill">Vintage</div>
+                    <div class="pill">Realista</div>
+                </div>
+            </div>
+
+            <div>
+                <div class="panel-title">Cor Base</div>
+                <div class="color-picker">
+                    <div class="color-circle active" style="background: #000;"></div>
+                    <div class="color-circle" style="background: #2E5C41;"></div>
+                    <div class="color-circle" style="background: #2A4365;"></div>
+                    <div class="color-circle" style="background: #E8E1D9;"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Mockup Section -->
+    <section class="mockup-section">
+        <div class="mockup-card">
+            <div class="mockup-img">
+                [Mockup Camiseta Branca]
+            </div>
+            
+            <div class="flex justify-between items-center">
+                <div class="panel-title" style="margin:0;">Cor da Camiseta</div>
+                <div class="color-picker">
+                    <div class="color-circle active" style="background: #FFF; border-color:#ccc;"></div>
+                    <div class="color-circle" style="background: #000;"></div>
+                </div>
+            </div>
+
+            <div class="size-selector">
+                <div class="size-btn">P</div>
+                <div class="size-btn active">M</div>
+                <div class="size-btn">G</div>
+                <div class="size-btn">GG</div>
+            </div>
+
+            <div class="price-row">
+                <div class="price">R$ 150</div>
+                <button class="btn-primary" style="margin:0; width:auto; padding: 10px 24px;">
+                    Adicionar
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Community Gallery -->
+    <section class="gallery">
+        <h2>Community Creations</h2>
+        <div class="gallery-grid">
+            <div class="gallery-card">
+                <div class="gallery-img">[Paisagem]</div>
+                <div class="gallery-info">
+                    <span>Lucas R.</span>
+                    <i class="ri-heart-line"></i>
+                </div>
+            </div>
+            <div class="gallery-card">
+                <div class="gallery-img">[Coração]</div>
+                <div class="gallery-info">
+                    <span>Maria S.</span>
+                    <i class="ri-heart-line"></i>
+                </div>
+            </div>
+            <div class="gallery-card">
+                <div class="gallery-img">[Dragão]</div>
+                <div class="gallery-info">
+                    <span>Rafael T.</span>
+                    <i class="ri-heart-line"></i>
+                </div>
+            </div>
+            <div class="gallery-card">
+                <div class="gallery-img">[Onda]</div>
+                <div class="gallery-info">
+                    <span>João M.</span>
+                    <i class="ri-heart-line"></i>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <div class="nav-item active">
+            <i class="ri-home-5-line"></i>
+            <span>Início</span>
+        </div>
+        <div class="nav-item">
+            <i class="ri-compass-3-line"></i>
+            <span>Explorar</span>
+        </div>
+        <div class="nav-item nav-create">
+            <div class="create-btn">
+                <i class="ri-add-line"></i>
+            </div>
+            <span style="margin-top: 4px;">Criar</span>
+        </div>
+        <div class="nav-item">
+            <i class="ri-heart-3-line"></i>
+            <span>Favoritos</span>
+        </div>
+        <div class="nav-item">
+            <i class="ri-user-3-line"></i>
+            <span>Perfil</span>
+        </div>
+    </nav>
+
+    <script>
+        // Simple JS for interaction demonstration
+        document.querySelectorAll('.pill').forEach(pill => {
+            pill.addEventListener('click', function() {
+                document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        document.querySelectorAll('.size-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+        
+        document.querySelectorAll('.refinement-panel .color-circle').forEach(circle => {
+            circle.addEventListener('click', function() {
+                document.querySelectorAll('.refinement-panel .color-circle').forEach(c => c.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>

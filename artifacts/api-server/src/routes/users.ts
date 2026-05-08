@@ -1,8 +1,7 @@
 import { Router, type IRouter } from "express";
-import { db, usersTable } from "@workspace/db";
+import { db, usersTable, guestSessionsTable, artworksTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { optionalAuth, requireAuth, type AuthenticatedRequest } from "../middlewares/auth";
-import { guestSessionsTable } from "@workspace/db";
 
 const router: IRouter = Router();
 
@@ -29,7 +28,7 @@ router.get("/me", optionalAuth, requireAuth, async (req: AuthenticatedRequest, r
   });
 });
 
-// Called after auth to migrate guest tokens
+// Called after auth to migrate guest tokens and artworks to the authenticated account
 router.post("/me/migrate-session", optionalAuth, requireAuth, async (req: AuthenticatedRequest, res): Promise<void> => {
   const { sessionId } = req.body as { sessionId?: string };
   if (!sessionId) {
@@ -42,24 +41,35 @@ router.post("/me/migrate-session", optionalAuth, requireAuth, async (req: Authen
     .from(guestSessionsTable)
     .where(eq(guestSessionsTable.sessionId, sessionId));
 
-  if (!session || session.tokenBalance <= 0) {
-    res.json({ migrated: false, tokensAdded: 0 });
+  if (!session) {
+    res.json({ migrated: false, tokensAdded: 0, artworksMigrated: 0 });
     return;
   }
 
   const tokensToAdd = session.tokenBalance;
 
-  await db
-    .update(usersTable)
-    .set({ tokenBalance: req.user!.tokenBalance + tokensToAdd })
-    .where(eq(usersTable.id, req.user!.id));
+  // Migrate token balance
+  if (tokensToAdd > 0) {
+    await db
+      .update(usersTable)
+      .set({ tokenBalance: req.user!.tokenBalance + tokensToAdd })
+      .where(eq(usersTable.id, req.user!.id));
+  }
 
+  // Migrate guest artworks to the authenticated user
+  const migratedArtworks = await db
+    .update(artworksTable)
+    .set({ userId: req.user!.id, guestSessionId: null })
+    .where(eq(artworksTable.guestSessionId, sessionId))
+    .returning({ id: artworksTable.id });
+
+  // Zero out the guest session
   await db
     .update(guestSessionsTable)
     .set({ tokenBalance: 0 })
     .where(eq(guestSessionsTable.sessionId, sessionId));
 
-  res.json({ migrated: true, tokensAdded: tokensToAdd });
+  res.json({ migrated: true, tokensAdded: tokensToAdd, artworksMigrated: migratedArtworks.length });
 });
 
 export default router;

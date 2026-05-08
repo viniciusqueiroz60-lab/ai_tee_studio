@@ -1,5 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db, ordersTable, artworksTable, tshirtModelsTable, usersTable } from "@workspace/db";
+import type { Artwork } from "@workspace/db";
+import type { Order } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { optionalAuth, requireAuth, type AuthenticatedRequest } from "../middlewares/auth";
 import Stripe from "stripe";
@@ -14,7 +16,7 @@ function getStripe(): Stripe {
   return new Stripe(key);
 }
 
-function formatOrder(order: any, artwork: any) {
+function formatOrder(order: Order, artwork: Artwork) {
   return {
     id: order.id,
     userId: order.userId,
@@ -59,6 +61,14 @@ router.post("/checkout", optionalAuth, requireAuth, async (req: AuthenticatedReq
   const [artwork] = await db.select().from(artworksTable).where(eq(artworksTable.id, artworkId));
   if (!artwork) { res.status(404).json({ error: "Artwork not found" }); return; }
 
+  // Access control: requester must be the owner OR artwork must be public+approved
+  const isOwner = req.user!.id === artwork.userId;
+  const isPublic = artwork.isShared && artwork.moderationStatus === "approved";
+  if (!isOwner && !isPublic) {
+    res.status(403).json({ error: "Cannot purchase this artwork" });
+    return;
+  }
+
   const [model] = await db.select().from(tshirtModelsTable).where(eq(tshirtModelsTable.id, modelId));
   if (!model) { res.status(404).json({ error: "Model not found" }); return; }
 
@@ -94,7 +104,6 @@ router.post("/checkout", optionalAuth, requireAuth, async (req: AuthenticatedReq
     },
   });
 
-  // Create pending order
   await db.insert(ordersTable).values({
     userId: req.user!.id,
     artworkId,
@@ -126,7 +135,6 @@ router.get("/orders", optionalAuth, requireAuth, async (req: AuthenticatedReques
   res.json(result);
 });
 
-// Stripe webhook - must use raw body
 router.post("/webhooks/stripe", async (req, res): Promise<void> => {
   const sig = req.headers["stripe-signature"] as string;
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -154,10 +162,9 @@ router.post("/webhooks/stripe", async (req, res): Promise<void> => {
       .set({ status: "paid" })
       .where(eq(ordersTable.stripeSessionId, session.id));
 
-    // Masterization placeholder
     logger.info(
       { sessionId: session.id, metadata: session.metadata },
-      "MASTERIZATION_PLACEHOLDER: Would call upscaling API (Replicate/Cloudinary) for artwork after payment confirmed"
+      "MASTERIZATION_PLACEHOLDER: Would call upscaling API for artwork after payment confirmed"
     );
   }
 
