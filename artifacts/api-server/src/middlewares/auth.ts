@@ -29,6 +29,9 @@ export async function optionalAuth(
         .from(usersTable)
         .where(eq(usersTable.firebaseUid, decoded.uid));
 
+      // Role is always derived from the verified Firebase token claim (authoritative)
+      const claimRole = decoded.admin === true ? "admin" : "user";
+
       if (!user) {
         const [newUser] = await db
           .insert(usersTable)
@@ -37,18 +40,21 @@ export async function optionalAuth(
             email: decoded.email ?? "",
             displayName: decoded.name ?? null,
             photoUrl: decoded.picture ?? null,
-            role: decoded.admin ? "admin" : "user",
+            role: claimRole,
             tokenBalance: 10,
           })
           .returning();
         user = newUser;
+      } else if (user.role !== claimRole) {
+        // Sync DB role whenever it diverges from the claim (e.g. claim was granted/revoked)
+        await db.update(usersTable).set({ role: claimRole }).where(eq(usersTable.id, user.id));
       }
 
       req.user = {
         id: user.id,
         firebaseUid: user.firebaseUid,
         email: user.email,
-        role: user.role,
+        role: claimRole,
         tokenBalance: user.tokenBalance,
       };
     } catch (_err) {

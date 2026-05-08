@@ -207,6 +207,18 @@ router.post("/artworks/:artworkId/share", optionalAuth, requireAuth, async (req:
 
 router.post("/artworks/:artworkId/like", optionalAuth, requireAuth, async (req: AuthenticatedRequest, res): Promise<void> => {
   const artworkId = parseInt(Array.isArray(req.params.artworkId) ? req.params.artworkId[0] : req.params.artworkId, 10);
+  if (isNaN(artworkId)) { res.status(400).json({ error: "Invalid id" }); return; }
+
+  const [artwork] = await db.select().from(artworksTable).where(eq(artworksTable.id, artworkId));
+  if (!artwork) { res.status(404).json({ error: "Not found" }); return; }
+
+  // Access control: only the owner or a public+approved artwork can be liked
+  const isOwner = req.user!.id === artwork.userId;
+  const isPublicApproved = artwork.isShared && artwork.moderationStatus === "approved";
+  if (!isOwner && !isPublicApproved) {
+    res.status(404).json({ error: "Not found" });
+    return;
+  }
 
   try {
     await db.insert(artworkLikesTable).values({ userId: req.user!.id, artworkId });
@@ -221,6 +233,18 @@ router.post("/artworks/:artworkId/like", optionalAuth, requireAuth, async (req: 
 
 router.delete("/artworks/:artworkId/like", optionalAuth, requireAuth, async (req: AuthenticatedRequest, res): Promise<void> => {
   const artworkId = parseInt(Array.isArray(req.params.artworkId) ? req.params.artworkId[0] : req.params.artworkId, 10);
+  if (isNaN(artworkId)) { res.status(400).json({ error: "Invalid id" }); return; }
+
+  const [artwork] = await db.select().from(artworksTable).where(eq(artworksTable.id, artworkId));
+  if (!artwork) { res.status(404).json({ error: "Not found" }); return; }
+
+  // Access control: only the owner or a public+approved artwork can be unliked
+  const isOwner = req.user!.id === artwork.userId;
+  const isPublicApproved = artwork.isShared && artwork.moderationStatus === "approved";
+  if (!isOwner && !isPublicApproved) {
+    res.status(404).json({ error: "Not found" });
+    return;
+  }
 
   await db.delete(artworkLikesTable).where(
     and(eq(artworkLikesTable.userId, req.user!.id), eq(artworkLikesTable.artworkId, artworkId))

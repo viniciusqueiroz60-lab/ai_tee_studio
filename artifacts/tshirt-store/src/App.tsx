@@ -34,6 +34,7 @@ function AppRoutes() {
           <Route path="/" component={HomePage} />
           <Route path="/auth" component={AuthPage} />
           <Route path="/create" component={CreatePage} />
+          <Route path="/editor" component={CreatePage} />
           <Route path="/gallery" component={GalleryPage} />
           <Route path="/product/:id" component={ProductPage} />
           <Route path="/orders" component={OrdersPage} />

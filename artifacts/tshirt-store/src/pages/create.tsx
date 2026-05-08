@@ -39,15 +39,39 @@ interface GeneratedArtwork {
   isShared: boolean;
 }
 
+const PENDING_ACTION_KEY = "arttee_pending_action";
+
+interface PendingAction {
+  action: "refine" | "share" | "order";
+  artworkId: number;
+}
+
+function savePendingAction(action: "refine" | "share" | "order", artworkId: number) {
+  try {
+    sessionStorage.setItem(PENDING_ACTION_KEY, JSON.stringify({ action, artworkId }));
+  } catch (_) {}
+}
+
+function loadPendingAction(): PendingAction | null {
+  try {
+    const raw = sessionStorage.getItem(PENDING_ACTION_KEY);
+    if (!raw) return null;
+    sessionStorage.removeItem(PENDING_ACTION_KEY);
+    return JSON.parse(raw) as PendingAction;
+  } catch (_) { return null; }
+}
+
 // Shown when a guest tries a gated action: refine, share, order
 function GuestConversionModal({
   open,
   onClose,
   action,
+  artworkId,
 }: {
   open: boolean;
   onClose: () => void;
   action: "refine" | "share" | "order";
+  artworkId: number | null;
 }) {
   const [, navigate] = useLocation();
 
@@ -68,6 +92,12 @@ function GuestConversionModal({
 
   const { title, body } = messages[action];
 
+  function goToAuth(mode: "signup" | "login") {
+    if (artworkId != null) savePendingAction(action, artworkId);
+    onClose();
+    navigate(mode === "signup" ? "/auth?mode=signup" : "/auth");
+  }
+
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
       <DialogContent className="max-w-sm">
@@ -79,23 +109,10 @@ function GuestConversionModal({
           <DialogDescription className="text-center">{body}</DialogDescription>
         </DialogHeader>
         <div className="space-y-3 pt-2">
-          <Button
-            className="w-full"
-            onClick={() => {
-              onClose();
-              navigate("/auth?mode=signup");
-            }}
-          >
+          <Button className="w-full" onClick={() => goToAuth("signup")}>
             Criar conta grátis
           </Button>
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={() => {
-              onClose();
-              navigate("/auth");
-            }}
-          >
+          <Button variant="outline" className="w-full" onClick={() => goToAuth("login")}>
             Já tenho conta — Entrar
           </Button>
         </div>
@@ -128,6 +145,27 @@ export default function CreatePage() {
     const style = params.get("style");
     if (style) setSelectedStyle(style);
   }, []);
+
+  // Resume a pending action after guest → user conversion
+  useEffect(() => {
+    if (!user) return; // wait until logged in
+    const pending = loadPendingAction();
+    if (!pending) return;
+
+    // Fetch the artwork by ID (now owned by the user after migration)
+    apiJson<GeneratedArtwork>(`/artworks/${pending.artworkId}`)
+      .then((fetched) => {
+        setArtwork(fetched);
+        setShared(fetched.isShared);
+        if (pending.action === "share") setShareConfirmOpen(true);
+        else if (pending.action === "order") navigate(`/product/${fetched.id}`);
+        // "refine" just restores the artwork; the refine textarea becomes visible
+      })
+      .catch(() => {
+        // artwork no longer accessible — silently ignore
+      });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   const balance = user ? (tokenBalance ?? 0) : (session?.tokenBalance ?? 0);
   const hasTokens = balance > 0;
@@ -450,6 +488,7 @@ export default function CreatePage() {
         <GuestConversionModal
           open={true}
           action={conversionModal}
+          artworkId={artwork?.id ?? null}
           onClose={() => setConversionModal(null)}
         />
       )}
