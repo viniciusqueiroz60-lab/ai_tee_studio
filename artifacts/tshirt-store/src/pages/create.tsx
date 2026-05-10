@@ -311,12 +311,18 @@ export default function CreatePage() {
   }
 
   return (
-    <div className="min-h-screen">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 md:pt-10">
-        <h1 className="font-display text-2xl md:text-3xl mb-1 text-foreground">Criar Design</h1>
-        <p className="text-xs md:text-sm text-muted-foreground mb-5">
-          Descreva sua ideia e nossa IA cria para você
-        </p>
+    <div className="min-h-screen bg-[#050508] atelier-grain overflow-x-hidden">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 md:pt-12">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8 md:mb-12 text-center md:text-left"
+        >
+          <h1 className="font-serif text-4xl md:text-6xl mb-2 text-white italic tracking-tight">Atelier de Design</h1>
+          <p className="text-sm md:text-base text-zinc-500 max-w-md font-medium">
+            Onde a inteligência artificial encontra a alta costura digital.
+          </p>
+        </motion.div>
 
         {/* On desktop: two-col layout from the start (prompt+controls left, preview right) */}
         <div className="md:grid md:grid-cols-[1fr_1fr] md:gap-10 lg:grid-cols-[1.2fr_1fr]">
@@ -340,152 +346,204 @@ export default function CreatePage() {
               </Alert>
             )}
 
-            <div>
-              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide block mb-2">Descrição</label>
-              <Textarea
-                placeholder="Ex: um dragão japonês entre flores de cerejeira..."
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                className="min-h-[110px] text-sm resize-none bg-card border-border focus:border-primary"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleGenerate();
-                }}
-              />
-            </div>
-
-            {/* Style picker */}
-            {styles && styles.length > 0 && (
-              <div>
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide block mb-2">Estilo</label>
-                <div className="flex flex-wrap gap-2">
-                  {styles.map((style) => (
-                    <button
-                      key={style.slug}
-                      onClick={() => setSelectedStyle(selectedStyle === style.slug ? null : style.slug)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs border transition-all ${
-                        selectedStyle === style.slug
-                          ? "bg-primary text-primary-foreground border-primary"
-                          : "bg-card text-muted-foreground border-border"
-                      }`}
-                    >
-                      <span>{STYLE_EMOJIS[style.slug] ?? style.icon ?? "🎨"}</span>
-                      {style.label}
-                    </button>
-                  ))}
+            <div className="relative group">
+              <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-primary/0 rounded-[2rem] blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+              <div className="relative bg-[#0A0A0F] border border-white/5 rounded-2xl p-6 shadow-2xl">
+                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em] block mb-4">Especificações do Projeto</label>
+                <div className="bg-[#fdfcf8] rounded-lg p-4 shadow-inner mb-4 transform -rotate-1 hover:rotate-0 transition-transform duration-500">
+                  <Textarea
+                    placeholder="Descreva a alma do seu design..."
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    className="min-h-[140px] text-lg font-serif border-none bg-transparent text-zinc-800 placeholder:text-zinc-300 focus-visible:ring-0 resize-none italic"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleGenerate();
+                    }}
+                  />
+                  <div className="flex justify-end mt-2">
+                    <span className="text-[9px] text-zinc-400 font-mono uppercase">Draft v1.0</span>
+                  </div>
                 </div>
-              </div>
-            )}
 
-            <button
-              onClick={handleGenerate}
-              disabled={generating || !prompt.trim() || !hasTokens}
-              className="w-full bg-primary text-primary-foreground rounded-xl py-3 text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity"
-            >
-              {generating ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> Gerando com IA...</>
-              ) : (
-                <><Wand2 className="w-4 h-4" /> Gerar Design</>
-              )}
-            </button>
+                {/* Style picker */}
+                {styles && styles.length > 0 && (
+                  <div className="mb-6">
+                    <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em] block mb-3">Direção Artística</label>
+                    <div className="flex flex-wrap gap-2">
+                      {styles.map((style) => (
+                        <button
+                          key={style.slug}
+                          onClick={() => setSelectedStyle(selectedStyle === style.slug ? null : style.slug)}
+                          className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium border transition-all duration-300 ${
+                            selectedStyle === style.slug
+                              ? "bg-white text-black border-white shadow-[0_0_20px_rgba(255,255,255,0.3)] scale-105"
+                              : "bg-white/5 text-zinc-400 border-white/10 hover:border-white/30 hover:text-white"
+                          }`}
+                        >
+                          <span className="opacity-70">{STYLE_EMOJIS[style.slug] ?? style.icon ?? "🎨"}</span>
+                          {style.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <Button
+                  onClick={handleGenerate}
+                  disabled={generating || !prompt.trim() || !hasTokens}
+                  className="w-full bg-white hover:bg-zinc-200 text-black rounded-xl py-6 text-base font-bold flex items-center justify-center gap-3 transition-all duration-500 disabled:opacity-30 group/btn overflow-hidden relative"
+                >
+                  {generating && <div className="absolute inset-0 light-leak opacity-50" />}
+                  <span className="relative z-10 flex items-center gap-3">
+                    {generating ? (
+                      <><Loader2 className="w-5 h-5 animate-spin" /> Materializando...</>
+                    ) : (
+                      <><Sparkles className="w-5 h-5 group-hover/btn:rotate-12 transition-transform" /> Iniciar Criação</>
+                    )}
+                  </span>
+                </Button>
+              </div>
+            </div>
 
             {/* Refinement — desktop: shown in left col below generate */}
             {artwork && (
-              <div className="hidden md:block pt-2 border-t border-border">
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide block mb-2">Refinar Design</label>
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="pt-6 mt-2 border-t border-white/5"
+              >
+                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em] block mb-4">Ajustes Finos</label>
                 {!user ? (
                   <button
                     onClick={() => setConversionModal("refine")}
-                    className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary transition-colors text-sm"
+                    className="w-full flex items-center justify-center gap-3 py-4 rounded-xl border border-white/10 bg-white/5 text-zinc-400 hover:border-white/30 hover:text-white transition-all text-sm font-medium"
                   >
                     <Lock className="w-4 h-4" />
-                    Entre para refinar com IA
+                    Autentique-se para refinar
                   </button>
                 ) : (
-                  <>
-                    <Textarea
-                      placeholder="Ex: adicione mais cores, mude o fundo..."
-                      value={refinementPrompt}
-                      onChange={(e) => setRefinementPrompt(e.target.value)}
-                      className="min-h-[80px] resize-none text-sm"
-                    />
+                  <div className="space-y-3">
+                    <div className="bg-zinc-900/50 rounded-xl p-1 border border-white/5 focus-within:border-white/20 transition-colors">
+                      <Textarea
+                        placeholder="Ex: Adicione texturas vintage, mude para tons pastéis..."
+                        value={refinementPrompt}
+                        onChange={(e) => setRefinementPrompt(e.target.value)}
+                        className="min-h-[100px] border-none bg-transparent text-sm text-zinc-300 placeholder:text-zinc-600 focus-visible:ring-0 resize-none"
+                      />
+                    </div>
                     <button
                       onClick={handleRefine}
                       disabled={refining || !refinementPrompt.trim()}
-                      className="w-full mt-2 flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-border bg-card text-sm font-medium disabled:opacity-50 hover:bg-muted transition-colors"
+                      className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white text-sm font-bold disabled:opacity-30 transition-all border border-white/5"
                     >
                       {refining ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-                      Refinar
+                      Aplicar Refinamento
                     </button>
-                  </>
+                  </div>
                 )}
-              </div>
+              </motion.div>
             )}
           </div>
 
-          {/* Right column: preview (always visible on desktop) */}
           <div className="hidden md:block">
-            <AnimatePresence mode="wait">
-              {generating ? (
-                <motion.div key="generating" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                  className="aspect-square rounded-2xl border-2 border-dashed border-primary/40 bg-primary/5 flex flex-col items-center justify-center gap-4"
-                >
-                  <div className="relative">
-                    <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center">
-                      <Wand2 className="w-8 h-8 text-primary animate-pulse" />
-                    </div>
-                    <div className="absolute inset-0 rounded-full border-2 border-primary/30 animate-ping" />
-                  </div>
-                  <div className="text-center">
-                    <p className="font-semibold text-primary text-sm">Gerando com Gemini AI...</p>
-                    <p className="text-xs text-muted-foreground mt-1">Isso pode levar alguns segundos</p>
-                  </div>
-                </motion.div>
-              ) : artwork ? (
-                <motion.div key={artwork.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}
-                  className="space-y-4"
-                >
-                  <div className="relative aspect-square rounded-2xl overflow-hidden border border-border shadow-xl">
-                    <img src={artwork.imageUrl} alt={artwork.prompt} className="w-full h-full object-cover" />
-                    {artwork.styleLabel && (
-                      <div className="absolute top-3 right-3">
-                        <Badge variant="secondary" className="bg-black/50 text-white border-white/20 backdrop-blur-sm">
-                          {artwork.styleLabel}
-                        </Badge>
-                      </div>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button onClick={handleShare} disabled={sharing || shared}
-                      className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-border bg-card text-sm font-medium disabled:opacity-50 hover:bg-muted transition-colors"
-                    >
-                      {sharing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Share2 className="w-4 h-4" />}
-                      {shared ? "Compartilhado!" : "Compartilhar"}
-                    </button>
-                    <button onClick={handleOrder}
-                      className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
-                    >
-                      <ShoppingCart className="w-4 h-4" />
-                      Pedir camiseta
-                    </button>
-                  </div>
-                  <button onClick={() => { setArtwork(null); setPrompt(""); setShared(false); }}
-                    className="w-full flex items-center justify-center gap-2 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            <div className="sticky top-10">
+              <AnimatePresence mode="wait">
+                {generating ? (
+                  <motion.div 
+                    key="generating" 
+                    initial={{ opacity: 0, scale: 0.9 }} 
+                    animate={{ opacity: 1, scale: 1 }} 
+                    exit={{ opacity: 0, scale: 1.1 }}
+                    className="aspect-square rounded-[2rem] border border-white/5 bg-[#0A0A0F] flex flex-col items-center justify-center gap-6 overflow-hidden relative shadow-2xl"
                   >
-                    <RefreshCw className="w-4 h-4" /> Criar novo design
-                  </button>
-                </motion.div>
-              ) : (
-                <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                  className="aspect-square rounded-2xl border-2 border-dashed border-border bg-muted/30 flex flex-col items-center justify-center gap-3 text-muted-foreground"
-                >
-                  <Wand2 className="w-12 h-12 opacity-30" />
-                  <div className="text-center">
-                    <p className="font-medium text-sm">Seu design aparecerá aqui</p>
-                    <p className="text-xs mt-1 opacity-70">Descreva e clique em Gerar</p>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                    <div className="absolute inset-0 light-leak opacity-20" />
+                    <div className="relative">
+                      <div className="w-24 h-24 rounded-full border border-white/10 flex items-center justify-center backdrop-blur-md">
+                        <Wand2 className="w-10 h-10 text-white animate-pulse" />
+                      </div>
+                      <motion.div 
+                        animate={{ rotate: 360 }} 
+                        transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+                        className="absolute -inset-4 border border-dashed border-white/20 rounded-full" 
+                      />
+                    </div>
+                    <div className="text-center z-10">
+                      <p className="font-serif text-2xl text-white italic">Tecendo Design...</p>
+                      <p className="text-xs text-zinc-500 mt-2 uppercase tracking-widest font-bold">Processamento em Alta Fidelidade</p>
+                    </div>
+                  </motion.div>
+                ) : artwork ? (
+                  <motion.div 
+                    key={artwork.id} 
+                    initial={{ opacity: 0, x: 20 }} 
+                    animate={{ opacity: 1, x: 0 }} 
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ type: "spring", damping: 20 }}
+                    className="space-y-6"
+                  >
+                    <div className="relative aspect-square rounded-[2rem] overflow-hidden border border-white/10 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.8)] group">
+                      <motion.img 
+                        layoutId={`art-${artwork.id}`}
+                        src={artwork.imageUrl} 
+                        alt={artwork.prompt} 
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-8">
+                        <p className="text-white font-serif text-xl italic line-clamp-2">"{artwork.prompt}"</p>
+                      </div>
+                      {artwork.styleLabel && (
+                        <div className="absolute top-6 right-6">
+                          <div className="px-4 py-2 bg-black/40 backdrop-blur-xl border border-white/10 rounded-full text-[10px] font-bold text-white uppercase tracking-widest">
+                            {artwork.styleLabel}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <Button 
+                        onClick={handleShare} 
+                        disabled={sharing || shared}
+                        variant="outline"
+                        className="rounded-xl py-6 border-white/10 bg-white/5 hover:bg-white/10 text-white font-bold gap-2"
+                      >
+                        {sharing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Share2 className="w-4 h-4" />}
+                        {shared ? "Arquivado na Galeria" : "Compartilhar Obra"}
+                      </Button>
+                      <Button 
+                        onClick={handleOrder}
+                        className="rounded-xl py-6 bg-white text-black hover:bg-zinc-200 font-bold gap-2 shadow-[0_0_30px_rgba(255,255,255,0.1)]"
+                      >
+                        <ShoppingCart className="w-4 h-4" />
+                        Confecção Imediata
+                      </Button>
+                    </div>
+                    
+                    <button 
+                      onClick={() => { setArtwork(null); setPrompt(""); setShared(false); }}
+                      className="w-full flex items-center justify-center gap-2 py-4 text-xs font-bold text-zinc-500 hover:text-white transition-colors uppercase tracking-widest"
+                    >
+                      <RefreshCw className="w-4 h-4" /> Novo Briefing
+                    </button>
+                  </motion.div>
+                ) : (
+                  <motion.div 
+                    key="empty" 
+                    initial={{ opacity: 0 }} 
+                    animate={{ opacity: 1 }}
+                    className="aspect-square rounded-[2rem] border border-white/5 bg-[#07070A] flex flex-col items-center justify-center gap-4 text-zinc-700 shadow-inner"
+                  >
+                    <div className="w-20 h-20 rounded-full border border-white/5 flex items-center justify-center">
+                      <Wand2 className="w-8 h-8 opacity-20" />
+                    </div>
+                    <div className="text-center">
+                      <p className="font-serif text-xl italic opacity-40">O Vazio Criativo</p>
+                      <p className="text-[10px] mt-2 uppercase tracking-[0.3em] font-bold opacity-30">Aguardando Especificações</p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
         </div>
 
@@ -643,44 +701,65 @@ export default function CreatePage() {
         </div>
 
         {/* ── Sua Camiseta ── always visible */}
-        <div className="mt-5 bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
-          <div className="grid grid-cols-[1fr_1fr] md:grid-cols-[1fr_1.2fr]">
-              {/* Left: T-shirt mockup */}
-              <div className="p-3 bg-muted/20 flex items-center justify-center">
-                <TshirtMockup
-                  ref={mockupRef}
-                  artworkUrl={artwork?.imageUrl ?? null}
-                  color={selectedColor}
-                  mockupUrl={models?.[0]?.mockupUrl ?? null}
-                  altText={artwork?.prompt}
-                />
+        <motion.div 
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-12 mb-20 bg-[#0A0A0F] rounded-[2.5rem] border border-white/5 shadow-2xl overflow-hidden"
+        >
+          <div className="grid md:grid-cols-[1.2fr_1fr]">
+              {/* Left: T-shirt mockup workbench */}
+              <div className="p-8 bg-zinc-950/50 flex items-center justify-center relative group">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.03)_0%,transparent_70%)]" />
+                <motion.div 
+                  whileHover={{ scale: 1.02 }}
+                  className="relative z-10 w-full max-w-md"
+                >
+                  <TshirtMockup
+                    ref={mockupRef}
+                    artworkUrl={artwork?.imageUrl ?? null}
+                    color={selectedColor}
+                    mockupUrl={models?.[0]?.mockupUrl ?? null}
+                    altText={artwork?.prompt}
+                  />
+                </motion.div>
+                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-1.5 bg-black/40 backdrop-blur-md rounded-full border border-white/5">
+                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                  <span className="text-[10px] font-bold text-white uppercase tracking-widest">Workbench Active</span>
+                </div>
               </div>
 
               {/* Right: config panel */}
-              <div className="p-4 flex flex-col gap-3">
-                <p className="text-sm font-semibold text-foreground">Sua Camiseta</p>
+              <div className="p-8 md:p-12 flex flex-col gap-8 border-t md:border-t-0 md:border-l border-white/5">
+                <div>
+                  <h2 className="font-serif text-3xl text-white italic mb-1">A Peça Final</h2>
+                  <p className="text-xs text-zinc-500 uppercase tracking-widest font-bold">Customização de Ateliê</p>
+                </div>
 
                 {/* Color picker */}
-                <div>
-                  <p className="text-[11px] text-muted-foreground mb-1.5 uppercase tracking-wide">Cor da Camiseta</p>
-                  <div className="flex gap-1.5 flex-wrap">
+                <div className="space-y-4">
+                  <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em]">Paleta de Tecidos</p>
+                  <div className="flex gap-3 flex-wrap">
                     {(models?.[0]?.availableColors ?? ["white", "black"]).map((color) => {
                       const label: Record<string, string> = {
-                        white: "Branca", black: "Preta", gray: "Cinza",
-                        navy: "Marinho", sand: "Areia", sage: "Sálvia",
-                        charcoal: "Carvão", red: "Vermelho",
+                        white: "Off-White", black: "Obsidian", gray: "Stone",
+                        navy: "Midnight", sand: "Sand", sage: "Sage",
+                        charcoal: "Charcoal", red: "Crimson",
                       };
                       return (
                         <button
                           key={color}
                           onClick={() => setSelectedColor(color)}
-                          className={`px-2.5 py-1 rounded-lg text-[11px] font-medium border transition-all ${
-                            selectedColor === color
-                              ? "bg-foreground text-background border-foreground"
-                              : "border-border bg-background text-foreground hover:border-primary"
+                          className={`group relative flex flex-col items-center gap-2 transition-all duration-300 ${
+                            selectedColor === color ? "scale-110" : "opacity-40 hover:opacity-100"
                           }`}
                         >
-                          {label[color] ?? color}
+                          <div 
+                            className={`w-8 h-8 rounded-full border transition-all ${
+                              selectedColor === color ? "border-white ring-4 ring-white/10" : "border-white/10"
+                            }`} 
+                            style={{ backgroundColor: color === 'white' ? '#f8f8f8' : color === 'black' ? '#111' : color }} 
+                          />
+                          <span className="text-[9px] font-bold uppercase tracking-tighter text-zinc-400 group-hover:text-white transition-colors">{label[color] ?? color}</span>
                         </button>
                       );
                     })}
@@ -688,17 +767,17 @@ export default function CreatePage() {
                 </div>
 
                 {/* Size picker */}
-                <div>
-                  <p className="text-[11px] text-muted-foreground mb-1.5 uppercase tracking-wide">Tamanho</p>
-                  <div className="flex gap-1 flex-wrap">
+                <div className="space-y-4">
+                  <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em]">Dimensões</p>
+                  <div className="flex gap-2 flex-wrap">
                     {["PP", "P", "M", "G", "GG", "XGG"].map((size) => (
                       <button
                         key={size}
                         onClick={() => setSelectedSize(size)}
-                        className={`min-w-[32px] h-8 px-2 rounded-lg text-[11px] font-medium border transition-all ${
+                        className={`min-w-[48px] h-12 px-2 rounded-xl text-xs font-bold border transition-all duration-300 ${
                           selectedSize === size
-                            ? "bg-foreground text-background border-foreground"
-                            : "border-border bg-background text-foreground hover:border-primary"
+                            ? "bg-white text-black border-white shadow-[0_0_20px_rgba(255,255,255,0.15)]"
+                            : "border-white/10 bg-white/5 text-zinc-500 hover:border-white/30 hover:text-white"
                         }`}
                       >
                         {size}
@@ -708,23 +787,32 @@ export default function CreatePage() {
                 </div>
 
                 {/* Price + CTA */}
-                <div className="mt-auto pt-2">
-                  <div className="flex items-baseline gap-1.5 mb-2.5">
-                    <Coins className="w-4 h-4 text-amber-500 self-center" />
-                    <span className="text-xl font-black text-foreground">150</span>
-                    <span className="text-[10px] text-muted-foreground">ou 3x de 50 tokens</span>
+                <div className="mt-auto pt-8 border-t border-white/5">
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Investimento</p>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-3xl font-serif text-white italic">150</span>
+                        <span className="text-[10px] text-zinc-500 font-bold uppercase">Tokens de Ateliê</span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Entrega</p>
+                      <p className="text-xs text-white font-bold italic">7-10 Dias Úteis</p>
+                    </div>
                   </div>
-                  <button
+                  <Button
                     onClick={handleOrder}
-                    className="w-full bg-primary text-primary-foreground rounded-xl py-2.5 text-sm font-medium flex items-center justify-center gap-2 hover:opacity-90 active:opacity-90 transition-opacity"
+                    disabled={!artwork || generating}
+                    className="w-full bg-white hover:bg-zinc-200 text-black rounded-xl py-8 text-base font-black flex items-center justify-center gap-3 shadow-[0_20px_40px_-10px_rgba(255,255,255,0.1)] transition-all active:scale-[0.98] disabled:opacity-30"
                   >
-                    <ShoppingCart className="w-4 h-4" />
-                    Adicionar ao Carrinho
-                  </button>
+                    <ShoppingCart className="w-5 h-5" />
+                    Adicionar ao Carrinho de Luxo
+                  </Button>
                 </div>
               </div>
             </div>
-        </div>
+        </motion.div>
       </div>
 
       {conversionModal && (
