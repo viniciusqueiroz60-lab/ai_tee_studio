@@ -39,8 +39,8 @@ export function AppHeader() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-[60px] flex items-center justify-between gap-6">
         {/* Logo */}
         <Link href="/">
-          <span className="font-display text-xl tracking-wide text-foreground select-none whitespace-nowrap">
-            ArtTee
+          <span className="font-display text-2xl tracking-tight text-foreground select-none whitespace-nowrap">
+            Tee Studio
           </span>
         </Link>
 

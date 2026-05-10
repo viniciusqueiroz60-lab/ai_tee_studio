@@ -67,9 +67,8 @@ export default defineConfig({
       strict: true,
     },
     proxy: {
-      [`${basePath}/api`]: {
+      [`${basePath.replace(/\/$/, "")}/api`]: {
         target: `http://localhost:${process.env.API_PORT ?? 8080}`,
-        rewrite: (path) => path.replace(new RegExp(`^${basePath}`), ""),
         changeOrigin: true,
       },
     },

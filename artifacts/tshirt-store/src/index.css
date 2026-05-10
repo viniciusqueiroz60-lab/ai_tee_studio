@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap');
 @plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
@@ -237,7 +238,8 @@
 }
 
 .font-display {
-  font-family: 'AlimamaShuHeiTi', 'AlibabaSans', sans-serif;
+  font-family: 'Instrument Serif', serif;
+  font-style: italic;
 }
 
 .font-serif {

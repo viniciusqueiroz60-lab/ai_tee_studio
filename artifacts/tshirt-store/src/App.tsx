@@ -1,5 +1,6 @@
 import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { GuestSessionProvider } from "@/contexts/GuestSessionContext";
@@ -33,8 +34,13 @@ const queryClient = new QueryClient({
 const BASE_URL = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 function AppRoutes() {
+  useEffect(() => {
+    // Force dark mode globally for the "Impeccable" Atelier aesthetic
+    document.documentElement.classList.add("dark");
+  }, []);
+
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-background dark atelier-grain">
       <AppHeader />
       {/* pb-[70px] on mobile for bottom nav; none on md+ */}
       <main className="flex-1 pb-[70px] md:pb-0">

@@ -45,7 +45,7 @@ export default function HomePage() {
       <section className="px-4 pt-8 pb-6 md:pt-16 md:pb-12 max-w-7xl mx-auto sm:px-6 lg:px-8">
         <div className="md:grid md:grid-cols-2 md:gap-12 md:items-center">
           <div>
-            <h1 className="font-display text-[28px] md:text-[42px] lg:text-[52px] leading-tight mb-3 text-foreground">
+            <h1 className="font-display text-[32px] md:text-[52px] lg:text-[64px] leading-tight mb-3 text-foreground">
               Crie sua Camiseta Única com IA
             </h1>
             <p className="text-sm md:text-base text-muted-foreground leading-relaxed mb-6 md:mb-8 max-w-lg">
