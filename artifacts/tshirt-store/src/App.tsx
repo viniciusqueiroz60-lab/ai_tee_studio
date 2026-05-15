@@ -58,7 +58,8 @@ import { ProcessedPreviewImage } from './components/ProcessedPreviewImage.tsx';
 import stylesData from '../styles.json';
 
 // --- INITIALIZE FIREBASE ---
-const app = initializeApp(firebaseConfig);
+import { getApps, getApp } from 'firebase/app';
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
 const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 
