@@ -25,7 +25,6 @@
     "vite": "catalog:"
   },
   "dependencies": {
-    "@google/genai": "^1.0.0",
     "firebase": "^12.12.1",
     "motion": "^12.0.0"
   }

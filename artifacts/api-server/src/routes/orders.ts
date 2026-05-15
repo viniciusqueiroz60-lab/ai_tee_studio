@@ -56,7 +56,7 @@ router.post("/checkout", optionalAuth, requireAuth, async (req: AuthenticatedReq
     return;
   }
 
-  const { artworkId, modelId, color, size, mockupPreview } = parsed.data;
+  const { artworkId, modelId, color, size } = parsed.data;
 
   const [artwork] = await db.select().from(artworksTable).where(eq(artworksTable.id, artworkId));
   if (!artwork) { res.status(404).json({ error: "Artwork not found" }); return; }
@@ -119,7 +119,6 @@ router.post("/checkout", optionalAuth, requireAuth, async (req: AuthenticatedReq
     stripeSessionId: session.id,
     status: "pending",
     totalPrice: model.price,
-    mockupPreview: mockupPreview ?? null,
   });
 
   res.json({ url: session.url, sessionId: session.id });

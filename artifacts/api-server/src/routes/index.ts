@@ -9,6 +9,7 @@ import stylesRouter from "./styles";
 import tshirtModelsRouter from "./tshirt_models";
 import ordersRouter from "./orders";
 import adminRouter from "./admin";
+import aiStudioRouter from "./ai-studio";
 
 const router: IRouter = Router();
 
@@ -22,5 +23,6 @@ router.use(stylesRouter);
 router.use(tshirtModelsRouter);
 router.use(ordersRouter);
 router.use(adminRouter);
+router.use(aiStudioRouter);
 
 export default router;

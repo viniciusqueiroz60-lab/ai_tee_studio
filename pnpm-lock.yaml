@@ -332,9 +332,6 @@ importers:
 
   artifacts/tshirt-store:
     dependencies:
-      '@google/genai':
-        specifier: ^1.0.0
-        version: 1.52.0
       firebase:
         specifier: ^12.12.1
         version: 12.12.1

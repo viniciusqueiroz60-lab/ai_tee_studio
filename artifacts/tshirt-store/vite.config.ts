@@ -28,9 +28,6 @@ if (!basePath) {
 
 export default defineConfig({
   base: basePath,
-  define: {
-    'process.env.GEMINI_API_KEY': JSON.stringify(process.env.GEMINI_API_KEY),
-  },
   plugins: [
     react(),
     tailwindcss(),
