@@ -861,9 +861,25 @@ export default function App() {
         } else {
           setUser(null);
         }
-      } catch (err) {
+      } catch (err: unknown) {
         console.error("onAuthStateChanged Error:", err);
-        handleFirestoreError(err, 'GET', `users/${fbUser?.uid || 'unknown'}`);
+        const code = (err as { code?: string })?.code;
+        if (fbUser && (code === 'unavailable' || code === 'failed-precondition')) {
+          // Firestore offline — usa dados do Auth para não bloquear o acesso
+          const fallbackUser: UserProfile = {
+            uid: fbUser.uid,
+            name: fbUser.displayName || 'Usuário',
+            email: fbUser.email || '',
+            avatar: fbUser.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(fbUser.displayName || 'U')}`,
+            tokens: 0,
+            accumulatedDiscount: 0,
+            totalSales: 0
+          };
+          setUser(fallbackUser);
+          setPage('dashboard');
+        } else {
+          handleFirestoreError(err, 'GET', `users/${fbUser?.uid || 'unknown'}`);
+        }
       } finally {
         setLoading(false);
       }
