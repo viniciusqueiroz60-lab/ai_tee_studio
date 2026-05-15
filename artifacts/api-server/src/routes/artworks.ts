@@ -294,7 +294,7 @@ router.delete("/artworks/:artworkId/like", optionalAuth, requireAuth, async (req
   }
 
   // Only decrement likes if the like row actually existed (transactionally)
-  await db.transaction(async (tx: any) => {
+  await db.transaction(async (tx) => {
     const deleted = await tx
       .delete(artworkLikesTable)
       .where(and(eq(artworkLikesTable.userId, req.user!.id), eq(artworkLikesTable.artworkId, artworkId)))

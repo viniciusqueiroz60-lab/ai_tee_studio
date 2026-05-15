@@ -53,9 +53,10 @@ router.post("/webhooks/stripe", async (req, res): Promise<void> => {
 
 async function processCompletedOrder(session: Stripe.Checkout.Session): Promise<void> {
   const sessionId = session.id;
+  const pendingOrderId = session.client_reference_id ?? sessionId;
   const db = getFirebaseFirestore();
 
-  const pendingRef = db.collection("pendingOrders").doc(sessionId);
+  const pendingRef = db.collection("pendingOrders").doc(pendingOrderId);
   const pendingSnap = await pendingRef.get();
 
   if (!pendingSnap.exists) {

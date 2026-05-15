@@ -2,6 +2,7 @@ import { Router, type IRouter, type Request, type Response, type NextFunction } 
 import { GoogleGenAI } from "@google/genai";
 import { logger } from "../lib/logger";
 import Stripe from "stripe";
+import { randomUUID } from "crypto";
 
 const router: IRouter = Router();
 
@@ -138,51 +139,60 @@ router.post("/checkout/create-session", ipRateLimit, async (req, res): Promise<v
       return;
     }
 
-    const stripe = getStripe();
-    const domains = process.env.REPLIT_DOMAINS?.split(",")[0];
-    const baseUrl = domains ? `https://${domains}` : "http://localhost:80";
+    const { getFirebaseFirestore } = await import("../lib/firebase-admin");
+    const firestoreDb = getFirebaseFirestore();
 
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
-      customer_email: customerEmail ?? undefined,
-      line_items: [{
-        price_data: {
-          currency: "brl",
-          product_data: { name: `Camiseta AI T-Studio — ${style ?? "Arte Exclusiva"}` },
-          unit_amount: 14990,
-        },
-        quantity: quantity ?? 1,
-      }],
-      mode: "payment",
-      success_url: `${baseUrl}/?success=true`,
-      cancel_url: `${baseUrl}/`,
-      metadata: {
-        shirt_model: (model ?? "").slice(0, 100),
-        shirt_size: (size ?? "").slice(0, 20),
-        shirt_color: (color ?? "").slice(0, 50),
-        shirt_style: (style ?? "").slice(0, 100),
-        quantity: String(quantity ?? 1),
-        share_in_gallery: shareInGallery ? "true" : "false",
-      },
-    });
+    const pendingOrderId = randomUUID();
+    const pendingOrderData = {
+      imageBase64,
+      style: style ?? "default",
+      customerEmail: customerEmail ?? null,
+      uid: uid ?? null,
+      model: model ?? null,
+      size: size ?? null,
+      color: color ?? null,
+      quantity: quantity ?? 1,
+      shareInGallery: shareInGallery ?? false,
+      createdAt: new Date().toISOString(),
+    };
 
+    await firestoreDb.collection("pendingOrders").doc(pendingOrderId).set(pendingOrderData);
+
+    let session: Stripe.Checkout.Session;
     try {
-      const { getFirebaseFirestore } = await import("../lib/firebase-admin");
-      const db = getFirebaseFirestore();
-      await db.collection("pendingOrders").doc(session.id).set({
-        imageBase64,
-        style: style ?? "default",
-        customerEmail: customerEmail ?? null,
-        uid: uid ?? null,
-        model: model ?? null,
-        size: size ?? null,
-        color: color ?? null,
-        quantity: quantity ?? 1,
-        shareInGallery: shareInGallery ?? false,
-        createdAt: new Date().toISOString(),
+      const stripe = getStripe();
+      const domains = process.env.REPLIT_DOMAINS?.split(",")[0];
+      const baseUrl = domains ? `https://${domains}` : "http://localhost:80";
+
+      session = await stripe.checkout.sessions.create({
+        payment_method_types: ["card"],
+        customer_email: customerEmail ?? undefined,
+        client_reference_id: pendingOrderId,
+        line_items: [{
+          price_data: {
+            currency: "brl",
+            product_data: { name: `Camiseta AI T-Studio — ${style ?? "Arte Exclusiva"}` },
+            unit_amount: 14990,
+          },
+          quantity: quantity ?? 1,
+        }],
+        mode: "payment",
+        success_url: `${baseUrl}/?success=true`,
+        cancel_url: `${baseUrl}/`,
+        metadata: {
+          shirt_model: (model ?? "").slice(0, 100),
+          shirt_size: (size ?? "").slice(0, 20),
+          shirt_color: (color ?? "").slice(0, 50),
+          shirt_style: (style ?? "").slice(0, 100),
+          quantity: String(quantity ?? 1),
+          share_in_gallery: shareInGallery ? "true" : "false",
+        },
       });
-    } catch (fbErr) {
-      logger.error({ fbErr }, "Failed to store pending order in Firestore — continuing with checkout");
+    } catch (stripeErr) {
+      await firestoreDb.collection("pendingOrders").doc(pendingOrderId).delete().catch((delErr: unknown) => {
+        logger.error({ delErr }, "Failed to clean up pending order after Stripe error");
+      });
+      throw stripeErr;
     }
 
     res.json({ url: session.url });
