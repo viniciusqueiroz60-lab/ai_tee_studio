@@ -110,7 +110,7 @@ router.post("/ai-studio/refine", async (req, res): Promise<void> => {
 
 router.post("/checkout/create-session", async (req, res): Promise<void> => {
   try {
-    const { model, size, quantity, color, designUrl, shareInGallery } = req.body;
+    const { model, size, quantity, color, shareInGallery } = req.body;
 
     const stripe = getStripe();
     const domains = process.env.REPLIT_DOMAINS?.split(",")[0];
@@ -130,11 +130,10 @@ router.post("/checkout/create-session", async (req, res): Promise<void> => {
       success_url: `${baseUrl}/?success=true`,
       cancel_url: `${baseUrl}/`,
       metadata: {
-        shirt_model: model ?? "",
-        shirt_size: size ?? "",
-        shirt_color: color ?? "",
+        shirt_model: (model ?? "").slice(0, 100),
+        shirt_size: (size ?? "").slice(0, 20),
+        shirt_color: (color ?? "").slice(0, 50),
         quantity: String(quantity ?? 1),
-        design_preview_url: designUrl ?? "",
         share_in_gallery: shareInGallery ? "true" : "false",
       },
     });
