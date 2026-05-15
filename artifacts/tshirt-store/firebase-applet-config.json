@@ -1,10 +1,10 @@
 {
-  "projectId": "gen-lang-client-0006263588",
-  "appId": "1:579074958164:web:82376f327277162fea5ec1",
-  "apiKey": "AIzaSyCz_oflI54kh7mpUdEQJ74nZpOC3cu2WvY",
-  "authDomain": "gen-lang-client-0006263588.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-aitstudio-31d1612b-845d-423d-b4a7-10a78e49331c",
-  "storageBucket": "gen-lang-client-0006263588.firebasestorage.app",
-  "messagingSenderId": "579074958164",
-  "measurementId": ""
+  "apiKey": "AIzaSyDY1V0Pgg283uAd2Ye3PihbnRD2EdYkdxQ",
+  "authDomain": "tee-studio-75a62.firebaseapp.com",
+  "projectId": "tee-studio-75a62",
+  "storageBucket": "tee-studio-75a62.firebasestorage.app",
+  "messagingSenderId": "747488213175",
+  "appId": "1:747488213175:web:b558d2d44ff7b8bbecf532",
+  "measurementId": "G-QRLRT7GB0D",
+  "firestoreDatabaseId": "(default)"
 }
