@@ -31,7 +31,7 @@ import {
 
 // Firebase
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInWithRedirect, getRedirectResult, GoogleAuthProvider, onAuthStateChanged, signOut } from 'firebase/auth';
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from 'firebase/auth';
 import { 
   getFirestore, 
   doc, 
@@ -829,11 +829,6 @@ export default function App() {
       setLoading(false);
     }, 10000);
 
-    // Processa o retorno do redirect do Google
-    getRedirectResult(auth).catch((error) => {
-      console.error("getRedirectResult Error:", error);
-    });
-
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
       clearTimeout(safetyTimeout);
       try {
@@ -902,9 +897,13 @@ export default function App() {
   const handleLogin = async () => {
     const provider = new GoogleAuthProvider();
     try {
-      await signInWithRedirect(auth, provider);
-    } catch (error) {
+      await signInWithPopup(auth, provider);
+    } catch (error: unknown) {
       console.error("handleLogin: Login Error:", error);
+      const code = (error as { code?: string })?.code;
+      if (code === 'auth/unauthorized-domain') {
+        alert('Domínio não autorizado no Firebase.\n\nAcesse o Firebase Console → Authentication → Settings → Authorized domains e adicione:\n\n' + window.location.hostname);
+      }
     }
   };
 
