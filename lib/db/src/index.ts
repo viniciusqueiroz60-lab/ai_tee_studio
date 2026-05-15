@@ -1,11 +1,11 @@
-import { drizzle } from "drizzle-orm/node-postgres";
+import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
 import pg from "pg";
 import * as schema from "./schema";
 
 const { Pool } = pg;
 
 let pool: pg.Pool;
-let db: any;
+let db: NodePgDatabase<typeof schema>;
 
 if (!process.env.DATABASE_URL) {
   console.warn("DATABASE_URL not set. Database features will be unavailable.");

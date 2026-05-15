@@ -16,15 +16,21 @@ router.post("/webhooks/stripe", async (req, res): Promise<void> => {
   const sig = req.headers["stripe-signature"] as string | undefined;
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
+  if (!webhookSecret) {
+    logger.error("STRIPE_WEBHOOK_SECRET is not set — rejecting webhook");
+    res.status(500).json({ error: "Webhook secret not configured" });
+    return;
+  }
+
+  if (!sig) {
+    res.status(400).json({ error: "Missing stripe-signature header" });
+    return;
+  }
+
   let event: Stripe.Event;
   try {
     const stripe = getStripe();
-    if (webhookSecret && sig) {
-      event = stripe.webhooks.constructEvent(req.body as Buffer, sig, webhookSecret);
-    } else {
-      logger.warn("STRIPE_WEBHOOK_SECRET not configured — skipping signature verification");
-      event = JSON.parse((req.body as Buffer).toString()) as Stripe.Event;
-    }
+    event = stripe.webhooks.constructEvent(req.body as Buffer, sig, webhookSecret);
   } catch (err) {
     logger.error({ err }, "Webhook signature verification failed");
     res.status(400).json({ error: "Invalid webhook signature" });
