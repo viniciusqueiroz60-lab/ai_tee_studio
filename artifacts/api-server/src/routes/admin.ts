@@ -21,7 +21,7 @@ router.get("/admin/users", optionalAuth, requireAdmin, async (req: Authenticated
 
   const users = await db.select().from(usersTable).orderBy(desc(usersTable.createdAt)).limit(limit).offset((page - 1) * limit);
 
-  res.json(users.map((u) => ({
+  res.json(users.map((u: typeof users[number]) => ({
     id: u.id,
     firebaseUid: u.firebaseUid,
     email: u.email,
@@ -69,7 +69,7 @@ router.get("/admin/artworks", optionalAuth, requireAdmin, async (req: Authentica
     .limit(20)
     .offset((page - 1) * 20);
 
-  res.json(artworks.map((a) => ({
+  res.json(artworks.map((a: typeof artworks[number]) => ({
     id: a.id, userId: a.userId, guestSessionId: a.guestSessionId,
     prompt: a.prompt, enrichedPrompt: a.enrichedPrompt, styleSlug: a.styleSlug,
     styleLabel: a.styleLabel, imageUrl: a.imageUrl, isShared: a.isShared,
@@ -127,7 +127,7 @@ router.get("/admin/orders", optionalAuth, requireAdmin, async (req: Authenticate
   const page = parseInt((req.query.page as string) || "1", 10);
   const orders = await db.select().from(ordersTable).orderBy(desc(ordersTable.createdAt)).limit(20).offset((page - 1) * 20);
 
-  const result = await Promise.all(orders.map(async (o) => {
+  const result = await Promise.all(orders.map(async (o: typeof orders[number]) => {
     const [artwork] = await db.select().from(artworksTable).where(eq(artworksTable.id, o.artworkId));
     return {
       id: o.id, userId: o.userId, artworkId: o.artworkId, modelId: o.modelId,
@@ -151,7 +151,7 @@ router.get("/admin/orders", optionalAuth, requireAdmin, async (req: Authenticate
 // Admin list — all styles including inactive
 router.get("/admin/styles", optionalAuth, requireAdmin, async (_req, res): Promise<void> => {
   const styles = await db.select().from(stylesTable).orderBy(stylesTable.sortOrder);
-  res.json(styles.map((s) => ({
+  res.json(styles.map((s: typeof styles[number]) => ({
     id: s.id, slug: s.slug, label: s.label, description: s.description,
     icon: s.icon, promptParams: s.promptParams, active: s.active, sortOrder: s.sortOrder,
   })));
@@ -160,7 +160,7 @@ router.get("/admin/styles", optionalAuth, requireAdmin, async (_req, res): Promi
 // Admin list — all models including inactive
 router.get("/admin/models", optionalAuth, requireAdmin, async (_req, res): Promise<void> => {
   const models = await db.select().from(tshirtModelsTable).orderBy(tshirtModelsTable.name);
-  res.json(models.map((m) => ({
+  res.json(models.map((m: typeof models[number]) => ({
     id: m.id, name: m.name, description: m.description,
     mockupUrl: m.mockupUrl, availableColors: m.availableColors,
     active: m.active, price: m.price,

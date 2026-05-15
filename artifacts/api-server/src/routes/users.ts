@@ -46,7 +46,7 @@ router.post("/me/migrate-session", optionalAuth, requireAuth, async (req: Authen
   let artworksMigrated = 0;
   let failureReason: string | null = null;
 
-  await db.transaction(async (tx) => {
+  await db.transaction(async (tx: any) => {
     // SELECT FOR UPDATE locks the row so concurrent requests block here.
     // Verify nonce ownership before proceeding — rejects requests that know
     // the sessionId but not the one-time migrationNonce.

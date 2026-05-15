@@ -643,11 +643,13 @@ const GalleryPage = ({ onRemix }: { onRemix: (d: Design) => void }) => {
 const CheckoutSidebar = ({ 
   isOpen, 
   onClose, 
-  design 
+  design,
+  user,
 }: { 
   isOpen: boolean, 
   onClose: () => void, 
-  design: Design | null 
+  design: Design | null,
+  user: UserProfile | null,
 }) => {
   const [quantity, setQuantity] = useState(1);
   const [size, setSize] = useState('M');
@@ -666,8 +668,11 @@ const CheckoutSidebar = ({
           size,
           quantity,
           color: design.color,
-          designUrl: design.image,
-          shareInGallery
+          imageBase64: design.image,
+          style: design.style,
+          customerEmail: user?.email ?? null,
+          uid: user?.uid ?? null,
+          shareInGallery,
         })
       });
       
@@ -677,7 +682,7 @@ const CheckoutSidebar = ({
       window.location.href = url;
     } catch (error) {
       console.error(error);
-      alert('Erro ao iniciar pagamento');
+      alert('Erro ao iniciar pagamento. Tente novamente.');
     }
   };
 
@@ -1023,7 +1028,8 @@ export default function App() {
       <CheckoutSidebar 
         isOpen={isCheckoutOpen} 
         onClose={() => setIsCheckoutOpen(false)} 
-        design={selectedDesignForCheckout} 
+        design={selectedDesignForCheckout}
+        user={user}
       />
     </div>
   );

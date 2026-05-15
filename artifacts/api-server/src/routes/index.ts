@@ -10,9 +10,11 @@ import tshirtModelsRouter from "./tshirt_models";
 import ordersRouter from "./orders";
 import adminRouter from "./admin";
 import aiStudioRouter from "./ai-studio";
+import webhookRouter from "./webhook";
 
 const router: IRouter = Router();
 
+router.use(webhookRouter);
 router.use(healthRouter);
 router.use(configRouter);
 router.use(sessionRouter);

@@ -131,7 +131,12 @@ router.post("/ai-studio/refine", ipRateLimit, async (req, res): Promise<void> =>
 
 router.post("/checkout/create-session", ipRateLimit, async (req, res): Promise<void> => {
   try {
-    const { model, size, quantity, color, shareInGallery } = req.body;
+    const { model, size, quantity, color, shareInGallery, imageBase64, style, customerEmail, uid } = req.body;
+
+    if (!imageBase64) {
+      res.status(400).json({ error: "imageBase64 is required" });
+      return;
+    }
 
     const stripe = getStripe();
     const domains = process.env.REPLIT_DOMAINS?.split(",")[0];
@@ -139,10 +144,11 @@ router.post("/checkout/create-session", ipRateLimit, async (req, res): Promise<v
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
+      customer_email: customerEmail ?? undefined,
       line_items: [{
         price_data: {
           currency: "brl",
-          product_data: { name: "Camiseta Personalizada AI T-Studio" },
+          product_data: { name: `Camiseta AI T-Studio — ${style ?? "Arte Exclusiva"}` },
           unit_amount: 14990,
         },
         quantity: quantity ?? 1,
@@ -154,10 +160,30 @@ router.post("/checkout/create-session", ipRateLimit, async (req, res): Promise<v
         shirt_model: (model ?? "").slice(0, 100),
         shirt_size: (size ?? "").slice(0, 20),
         shirt_color: (color ?? "").slice(0, 50),
+        shirt_style: (style ?? "").slice(0, 100),
         quantity: String(quantity ?? 1),
         share_in_gallery: shareInGallery ? "true" : "false",
       },
     });
+
+    try {
+      const { getFirebaseFirestore } = await import("../lib/firebase-admin");
+      const db = getFirebaseFirestore();
+      await db.collection("pendingOrders").doc(session.id).set({
+        imageBase64,
+        style: style ?? "default",
+        customerEmail: customerEmail ?? null,
+        uid: uid ?? null,
+        model: model ?? null,
+        size: size ?? null,
+        color: color ?? null,
+        quantity: quantity ?? 1,
+        shareInGallery: shareInGallery ?? false,
+        createdAt: new Date().toISOString(),
+      });
+    } catch (fbErr) {
+      logger.error({ fbErr }, "Failed to store pending order in Firestore — continuing with checkout");
+    }
 
     res.json({ url: session.url });
   } catch (err) {

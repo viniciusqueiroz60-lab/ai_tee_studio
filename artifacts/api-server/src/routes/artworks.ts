@@ -36,7 +36,7 @@ router.get("/me/artworks", optionalAuth, requireAuth, async (req: AuthenticatedR
     .where(eq(artworksTable.userId, req.user!.id))
     .orderBy(desc(artworksTable.createdAt));
 
-  res.json(myArtworks.map((a) => formatArtwork(a)));
+  res.json(myArtworks.map((a: typeof myArtworks[number]) => formatArtwork(a)));
 });
 
 router.post("/generate", optionalAuth, async (req: AuthenticatedRequest, res): Promise<void> => {
@@ -294,7 +294,7 @@ router.delete("/artworks/:artworkId/like", optionalAuth, requireAuth, async (req
   }
 
   // Only decrement likes if the like row actually existed (transactionally)
-  await db.transaction(async (tx) => {
+  await db.transaction(async (tx: any) => {
     const deleted = await tx
       .delete(artworkLikesTable)
       .where(and(eq(artworkLikesTable.userId, req.user!.id), eq(artworkLikesTable.artworkId, artworkId)))

@@ -41,15 +41,16 @@ router.get("/gallery", async (req, res): Promise<void> => {
     .from(artworksTable)
     .where(whereClause);
 
-  const userIds = [...new Set(artworks.map((a) => a.userId).filter((id): id is number => id != null))];
+  const rawUserIds = artworks.map((a: (typeof artworks)[number]) => a.userId).filter((id: number | null): id is number => id != null);
+  const userIds: number[] = [...new Set<number>(rawUserIds)];
   const users = userIds.length > 0
-    ? await db.select({ id: usersTable.id, displayName: usersTable.displayName }).from(usersTable).where(inArray(usersTable.id, userIds))
-    : [];
+    ? await db.select({ id: usersTable.id, displayName: usersTable.displayName }).from(usersTable).where(inArray(usersTable.id, userIds as number[]))
+    : [] as { id: number; displayName: string | null }[];
 
-  const userMap = new Map(users.map((u) => [u.id, u.displayName ?? null]));
+  const userMap = new Map(users.map((u: { id: number; displayName: string | null }) => [u.id, u.displayName ?? null]));
 
   res.json({
-    artworks: artworks.map((a) => ({
+    artworks: artworks.map((a: typeof artworks[number]) => ({
       id: a.id,
       userId: a.userId,
       prompt: a.prompt,
@@ -81,10 +82,10 @@ router.get("/gallery/styles", async (_req, res): Promise<void> => {
       .groupBy(artworksTable.styleSlug),
   ]);
 
-  const countMap = new Map(counts.map((r) => [r.styleSlug, r.cnt]));
+  const countMap = new Map(counts.map((r: { styleSlug: string | null; cnt: number }) => [r.styleSlug, r.cnt]));
 
   res.json(
-    styles.map((style) => ({
+    styles.map((style: typeof styles[number]) => ({
       styleSlug: style.slug,
       styleLabel: style.label,
       icon: style.icon,

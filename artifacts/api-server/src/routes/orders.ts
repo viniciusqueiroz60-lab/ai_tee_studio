@@ -132,7 +132,7 @@ router.get("/orders", optionalAuth, requireAuth, async (req: AuthenticatedReques
     .orderBy(desc(ordersTable.createdAt));
 
   const result = await Promise.all(
-    orders.map(async (o) => {
+    orders.map(async (o: typeof orders[number]) => {
       const [artwork] = await db.select().from(artworksTable).where(eq(artworksTable.id, o.artworkId));
       return formatOrder(o, artwork);
     })

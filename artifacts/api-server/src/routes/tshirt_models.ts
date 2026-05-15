@@ -10,7 +10,7 @@ router.get("/models", async (_req, res): Promise<void> => {
     .from(tshirtModelsTable)
     .where(eq(tshirtModelsTable.active, true));
 
-  res.json(models.map((m) => ({
+  res.json(models.map((m: typeof models[number]) => ({
     id: m.id,
     name: m.name,
     description: m.description,
