@@ -139,12 +139,21 @@ router.post("/checkout/create-session", ipRateLimit, async (req, res): Promise<v
       return;
     }
 
-    const { getFirebaseFirestore } = await import("../lib/firebase-admin");
+    const { getFirebaseFirestore, getFirebaseStorageBucket } = await import("../lib/firebase-admin");
     const firestoreDb = getFirebaseFirestore();
 
     const pendingOrderId = randomUUID();
+
+    const bucket = getFirebaseStorageBucket();
+    const tempImagePath = `pendingArtwork/${pendingOrderId}.png`;
+    const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
+    await bucket.file(tempImagePath).save(Buffer.from(base64Data, "base64"), {
+      metadata: { contentType: "image/png" },
+      public: false,
+    });
+
     const pendingOrderData = {
-      imageBase64,
+      tempImagePath,
       style: style ?? "default",
       customerEmail: customerEmail ?? null,
       uid: uid ?? null,

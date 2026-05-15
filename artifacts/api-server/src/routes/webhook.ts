@@ -66,7 +66,7 @@ async function processCompletedOrder(session: Stripe.Checkout.Session): Promise<
 
   const pending = pendingSnap.data()!;
   const {
-    imageBase64,
+    tempImagePath,
     style,
     customerEmail: pendingEmail,
     uid,
@@ -96,6 +96,10 @@ async function processCompletedOrder(session: Stripe.Checkout.Session): Promise<
   });
 
   try {
+    const bucket = getFirebaseStorageBucket();
+    const [tempImageBuffer] = await bucket.file(tempImagePath as string).download();
+    const imageBase64 = `data:image/png;base64,${tempImageBuffer.toString("base64")}`;
+
     logger.info({ sessionId }, "Starting artwork upscaling");
     const upscaledImage = await upscaleImage(imageBase64);
 
@@ -104,7 +108,6 @@ async function processCompletedOrder(session: Stripe.Checkout.Session): Promise<
     const styleSlug = (style ?? "default").toLowerCase().replace(/[^a-z0-9]/g, "_").slice(0, 30);
     const filename = `artes/${emailSlug}_${dateStr}_${styleSlug}.png`;
 
-    const bucket = getFirebaseStorageBucket();
     const file = bucket.file(filename);
     const base64Data = upscaledImage.replace(/^data:image\/\w+;base64,/, "");
     const imageBuffer = Buffer.from(base64Data, "base64");
@@ -128,6 +131,9 @@ async function processCompletedOrder(session: Stripe.Checkout.Session): Promise<
     });
 
     await pendingRef.delete();
+    await bucket.file(tempImagePath as string).delete().catch((delErr: unknown) => {
+      logger.warn({ delErr, tempImagePath }, "Failed to delete temp artwork from Storage");
+    });
 
     logger.info({ sessionId, filename }, "Artwork processed and stored successfully");
   } catch (err) {

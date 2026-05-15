@@ -37,7 +37,7 @@ export async function setAdminClaim(uid: string): Promise<void> {
 
 export function getFirebaseFirestore() {
   const adminApp = getFirebaseAdmin();
-  const databaseId = process.env.FIRESTORE_DATABASE_ID ?? "ai-studio-aitstudio-31d1612b-845d-423d-b4a7-10a78e49331c";
+  const databaseId = process.env.FIRESTORE_DATABASE_ID ?? "(default)";
   return getFirestore(adminApp, databaseId);
 }
 
