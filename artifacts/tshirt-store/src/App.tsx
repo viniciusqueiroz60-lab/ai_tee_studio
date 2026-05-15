@@ -31,7 +31,7 @@ import {
 
 // Firebase
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from 'firebase/auth';
+import { getAuth, signInWithRedirect, getRedirectResult, GoogleAuthProvider, onAuthStateChanged, signOut } from 'firebase/auth';
 import { 
   getFirestore, 
   doc, 
@@ -829,6 +829,11 @@ export default function App() {
       setLoading(false);
     }, 10000);
 
+    // Processa o retorno do redirect do Google
+    getRedirectResult(auth).catch((error) => {
+      console.error("getRedirectResult Error:", error);
+    });
+
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
       clearTimeout(safetyTimeout);
       try {
@@ -897,8 +902,7 @@ export default function App() {
   const handleLogin = async () => {
     const provider = new GoogleAuthProvider();
     try {
-      const result = await signInWithPopup(auth, provider);
-      // O estado de 'user' será atualizado pelo onAuthStateChanged.
+      await signInWithRedirect(auth, provider);
     } catch (error) {
       console.error("handleLogin: Login Error:", error);
     }
