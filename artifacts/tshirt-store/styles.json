@@ -1,0 +1,79 @@
+{
+  "platform_name": "AI T-Studio",
+  "technical_constraints": {
+    "global_negative_prompt": "mockups, realistic photos of people wearing shirts, frames, borders, paper textures, blurred edges, messy backgrounds, watermarks, text gibberish, shadows outside the object, low resolution",
+    "print_optimization": "isolated on solid white background, high-contrast, centered composition, clean vector-like edges, 300 DPI aesthetic, professional garment graphic"
+  },
+  "style_presets": [
+    {
+      "id": "vintage-70s",
+      "label": "70's Groovy",
+      "category": "Retro",
+      "enrichment": "1970s vintage t-shirt style, warm earth tones, burnt orange and mustard yellow palette, groovy typography influence, organic wavy shapes, slight grainy retro print texture, retro surf culture aesthetic",
+      "preview_image_prompt": "A retro sunset with palm trees in 70s groovy style, warm earth tones, vintage t-shirt print"
+    },
+    {
+      "id": "vintage-80s",
+      "label": "80's Synthwave",
+      "category": "Retro",
+      "enrichment": "1980s retro-futurism, synthwave aesthetic, neon pink and cyan highlights, digital grid perspective, chrome textures, airbrush technique, sharp vector lines, vibrant night-glow effect",
+      "preview_image_prompt": "A futuristic sports car driving into a neon sun, 80s synthwave style, vibrant pink and blue"
+    },
+    {
+      "id": "clean-minimal",
+      "label": "Clean & Minimal",
+      "category": "Modern",
+      "enrichment": "ultra-minimalist design, heavy use of negative space, professional flat vector, bold simple shapes, geometric harmony, premium boutique aesthetic, limited color palette, high-end fashion graphic",
+      "preview_image_prompt": "A single geometric mountain and a circle sun, ultra-minimalist flat vector, clean lines"
+    },
+    {
+      "id": "fine-line",
+      "label": "Fine Line Art",
+      "category": "Modern",
+      "enrichment": "single continuous line drawing, ultra-thin black lines, elegant silhouettes, fluid motion, minimalist sophisticated sketch, sophisticated artistic kontur, black on white background",
+      "preview_image_prompt": "A continuous line drawing of a rose, elegant thin lines, minimalist white background"
+    },
+    {
+      "id": "heavy-metal",
+      "label": "Heavy Metal",
+      "category": "Alternative",
+      "enrichment": "dark blackwork engraving, intricate stipple shading, gothic woodcut style, extreme detail, high-contrast monochrome, occult and dark fantasy aesthetic, sharp aggressive linework, ink wash ink-blot textures",
+      "preview_image_prompt": "A detailed gothic skull with crow wings, heavy metal engraving style, black and white"
+    },
+    {
+      "id": "horror-show",
+      "label": "Horror Show",
+      "category": "Alternative",
+      "enrichment": "vintage pulp horror magazine cover style, 1950s cinematic lighting, dramatic shadows, vibrant blood red and deep black, distressed comic book texture, b-movie monster aesthetic",
+      "preview_image_prompt": "A swamp monster emerging from the dark, vintage horror comic style, dramatic red lighting"
+    },
+    {
+      "id": "pop-art",
+      "label": "Pop Art",
+      "category": "Artistic",
+      "enrichment": "Andy Warhol and Roy Lichtenstein influence, bold halftone dots, vibrant primary colors, thick black outlines, comic book explosion style, high-energy visual, Ben-Day dots texture",
+      "preview_image_prompt": "A colorful comic style explosion with 'BOOM' text, pop art style, bold dots and outlines"
+    },
+    {
+      "id": "japanese-ukiyo",
+      "label": "Japanese Heritage",
+      "category": "Artisan",
+      "enrichment": "traditional Japanese woodblock print, ukiyo-e aesthetic, flat muted colors, classic oriental composition, kanagawa wave-style linework, cultural heritage illustration, ancient ink brush feel",
+      "preview_image_prompt": "A traditional Japanese dragon among clouds, ukiyo-e woodblock style, muted colors"
+    },
+    {
+      "id": "linocut-craft",
+      "label": "Linocut Print",
+      "category": "Artisan",
+      "enrichment": "hand-pressed linoleum cut texture, organic imperfections, bold blocky ink stamps, artisanal craft look, rustic handmade aesthetic, thick carved lines, tactile ink feel",
+      "preview_image_prompt": "An owl carved in linocut style, bold black ink stamps, rustic handmade texture"
+    },
+    {
+      "id": "cyberpunk-noir",
+      "label": "Cyberpunk Noir",
+      "category": "Alternative",
+      "enrichment": "futuristic dystopia, high-tech low-life, rain-slicked street reflections, neon signage glow, deep shadows, glitch art elements, techno-organic details, gritty urban atmosphere",
+      "preview_image_prompt": "A cyborg eye reflecting a neon city, cyberpunk noir style, rainy and dark"
+    }
+  ]
+}
