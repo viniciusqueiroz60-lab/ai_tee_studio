@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request, type Response, type NextFunction } from "express";
 import { GoogleGenAI } from "@google/genai";
 import { logger } from "../lib/logger";
 import Stripe from "stripe";
@@ -17,7 +17,28 @@ function getStripe(): Stripe {
   return new Stripe(key);
 }
 
-router.post("/ai-studio/generate-prompt", async (req, res): Promise<void> => {
+const rateLimitWindows = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT = 20;
+const WINDOW_MS = 60 * 1000;
+
+function ipRateLimit(req: Request, res: Response, next: NextFunction): void {
+  const ip = (req.headers["x-forwarded-for"] as string | undefined)?.split(",")[0].trim() ?? req.socket.remoteAddress ?? "unknown";
+  const now = Date.now();
+  const entry = rateLimitWindows.get(ip);
+  if (!entry || now > entry.resetAt) {
+    rateLimitWindows.set(ip, { count: 1, resetAt: now + WINDOW_MS });
+    next();
+    return;
+  }
+  entry.count++;
+  if (entry.count > RATE_LIMIT) {
+    res.status(429).json({ error: "Muitas requisições. Tente novamente em breve." });
+    return;
+  }
+  next();
+}
+
+router.post("/ai-studio/generate-prompt", ipRateLimit, async (req, res): Promise<void> => {
   try {
     const { concept, enrichment, technicalConstraints } = req.body;
     if (!concept) { res.status(400).json({ error: "concept is required" }); return; }
@@ -37,7 +58,7 @@ router.post("/ai-studio/generate-prompt", async (req, res): Promise<void> => {
   }
 });
 
-router.post("/ai-studio/generate-image", async (req, res): Promise<void> => {
+router.post("/ai-studio/generate-image", ipRateLimit, async (req, res): Promise<void> => {
   try {
     const { prompt } = req.body;
     if (!prompt) { res.status(400).json({ error: "prompt is required" }); return; }
@@ -68,7 +89,7 @@ router.post("/ai-studio/generate-image", async (req, res): Promise<void> => {
   }
 });
 
-router.post("/ai-studio/refine", async (req, res): Promise<void> => {
+router.post("/ai-studio/refine", ipRateLimit, async (req, res): Promise<void> => {
   try {
     const { imageBase64, modificationPrompt } = req.body;
     if (!imageBase64 || !modificationPrompt) {
@@ -108,7 +129,7 @@ router.post("/ai-studio/refine", async (req, res): Promise<void> => {
   }
 });
 
-router.post("/checkout/create-session", async (req, res): Promise<void> => {
+router.post("/checkout/create-session", ipRateLimit, async (req, res): Promise<void> => {
   try {
     const { model, size, quantity, color, shareInGallery } = req.body;
 

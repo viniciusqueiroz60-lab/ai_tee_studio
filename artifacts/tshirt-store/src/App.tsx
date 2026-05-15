@@ -59,12 +59,8 @@ import stylesData from '../styles.json';
 
 // --- INITIALIZE FIREBASE ---
 const app = initializeApp(firebaseConfig);
-console.log("Firebase App Initialized");
 const auth = getAuth(app);
-console.log("Auth Initialized");
 const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
-console.log("Firestore Initialized with DB ID:", firebaseConfig.firestoreDatabaseId);
-console.log("App Instance Instance:", app);
 
 
 // --- DATA ---
@@ -822,34 +818,26 @@ export default function App() {
 
   // Auth Listener
   useEffect(() => {
-    console.log("Setting up Auth Listener");
     
     // Timeout de segurança: se o listener não responder em 10s, encerra o loading
     const safetyTimeout = setTimeout(() => {
-      console.warn("Auth listener demorou muito!");
       setLoading(false);
     }, 10000);
 
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
       clearTimeout(safetyTimeout);
-      console.log("onAuthStateChanged: Estado mudou, Usuário:", fbUser ? fbUser.uid : "null");
       try {
         if (fbUser) {
-          console.log("onAuthStateChanged: Usuário detectado, buscando doc...");
           
           const userRef = doc(db, 'users', fbUser.uid);
           
           const userDoc = await getDoc(userRef);
-          console.log("onAuthStateChanged: Doc buscado, existe:", userDoc.exists());
           
           if (userDoc.exists()) {
-            console.log("onAuthStateChanged: Doc existe, carregando usuário.");
             const userData = { uid: fbUser.uid, ...userDoc.data() } as UserProfile;
-            console.log("onAuthStateChanged: Dados do usuário prontos:", userData);
             setUser(userData);
-            setPage('dashboard'); // <-- Adicionado redirecionamento
+            setPage('dashboard');
           } else {
-            console.log("onAuthStateChanged: Doc não existe, criando novo usuário.");
             // Initialize New User
             const newUser: UserProfile = {
               uid: fbUser.uid,
@@ -861,12 +849,10 @@ export default function App() {
               totalSales: 0
             };
             await setDoc(doc(db, 'users', fbUser.uid), newUser);
-            console.log("onAuthStateChanged: Novo usuário criado.");
             setUser(newUser);
-            setPage('dashboard'); // <-- Adicionado redirecionamento
+            setPage('dashboard');
           }
         } else {
-          console.log("onAuthStateChanged: Usuário é null.");
           setUser(null);
         }
       } catch (err) {
@@ -874,7 +860,6 @@ export default function App() {
         handleFirestoreError(err, 'GET', `users/${fbUser?.uid || 'unknown'}`);
       } finally {
         setLoading(false);
-        console.log("Auth Listener completed, Loading set to false");
       }
     });
     return () => {
@@ -883,8 +868,6 @@ export default function App() {
     };
   }, []);
 
-  console.log("App Component Rendering. User state:", user);
-  console.log("App Component Rendering. Page state:", page);
 
   // Fetch User Designs
   useEffect(() => {
@@ -907,11 +890,9 @@ export default function App() {
   }, [user]);
 
   const handleLogin = async () => {
-    console.log("handleLogin: iniciando signInWithPopup");
     const provider = new GoogleAuthProvider();
     try {
       const result = await signInWithPopup(auth, provider);
-      console.log("handleLogin: Login bem-sucedido. UID:", result.user.uid);
       // O estado de 'user' será atualizado pelo onAuthStateChanged.
     } catch (error) {
       console.error("handleLogin: Login Error:", error);
