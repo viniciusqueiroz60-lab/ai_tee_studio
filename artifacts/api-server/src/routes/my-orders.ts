@@ -26,29 +26,34 @@ router.get("/orders/me", async (req, res): Promise<void> => {
     const snap = await db
       .collection("orders")
       .where("uid", "==", uid)
-      .orderBy("createdAt", "desc")
       .limit(50)
       .get();
 
-    const orders = snap.docs.map(d => {
-      const data = d.data();
-      return {
-        id: d.id,
-        status: data.status,
-        sessionId: data.sessionId,
-        style: data.style,
-        model: data.model,
-        size: data.size,
-        color: data.color,
-        quantity: data.quantity,
-        amount: data.amount,
-        currency: data.currency,
-        artworkUrl: data.artworkUrl ?? null,
-        upscaled: data.upscaled ?? false,
-        createdAt: data.createdAt,
-        completedAt: data.completedAt ?? null,
-      };
-    });
+    const orders = snap.docs
+      .map(d => {
+        const data = d.data();
+        return {
+          id: d.id,
+          status: data.status,
+          sessionId: data.sessionId,
+          style: data.style,
+          model: data.model ?? null,
+          size: data.size ?? null,
+          color: data.color ?? null,
+          quantity: data.quantity ?? 1,
+          amount: data.amount ?? null,
+          currency: data.currency ?? null,
+          artworkUrl: data.artworkUrl ?? null,
+          upscaled: data.upscaled ?? false,
+          createdAt: data.createdAt ?? null,
+          completedAt: data.completedAt ?? null,
+        };
+      })
+      .sort((a, b) => {
+        if (!a.createdAt) return 1;
+        if (!b.createdAt) return -1;
+        return b.createdAt.localeCompare(a.createdAt);
+      });
 
     res.json({ orders });
   } catch (err) {
