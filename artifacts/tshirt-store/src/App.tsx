@@ -681,6 +681,24 @@ const CheckoutSidebar = ({
 
   const checkoutToStripe = async () => {
     try {
+      // O servidor decodifica o campo `imageBase64` como base64. Se o
+      // design.image for uma URL (https) ou um caminho local (ex.: preview de
+      // estilo), precisamos buscar a imagem e converter para data URL antes
+      // de enviar — caso contrário o servidor grava lixo no Storage e o
+      // upscaling do Replicate falha.
+      let imageBase64 = design.image;
+      if (!imageBase64.startsWith('data:')) {
+        const imgRes = await fetch(imageBase64);
+        if (!imgRes.ok) throw new Error('Failed to fetch design image');
+        const blob = await imgRes.blob();
+        imageBase64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+      }
+
       const response = await fetch('/api/checkout/create-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -689,7 +707,7 @@ const CheckoutSidebar = ({
           size,
           quantity,
           color: design.color,
-          imageBase64: design.image,
+          imageBase64,
           style: design.style,
           customerEmail: user?.email ?? null,
           uid: user?.uid ?? null,
