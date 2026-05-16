@@ -863,9 +863,8 @@ export default function App() {
         }
       } catch (err: unknown) {
         console.error("onAuthStateChanged Error:", err);
-        const code = (err as { code?: string })?.code;
-        if (fbUser && (code === 'unavailable' || code === 'failed-precondition')) {
-          // Firestore offline — usa dados do Auth para não bloquear o acesso
+        if (fbUser) {
+          // Qualquer erro do Firestore não deve bloquear o acesso — usa dados do Auth
           const fallbackUser: UserProfile = {
             uid: fbUser.uid,
             name: fbUser.displayName || 'Usuário',
@@ -877,8 +876,6 @@ export default function App() {
           };
           setUser(fallbackUser);
           setPage('dashboard');
-        } else {
-          handleFirestoreError(err, 'GET', `users/${fbUser?.uid || 'unknown'}`);
         }
       } finally {
         setLoading(false);
