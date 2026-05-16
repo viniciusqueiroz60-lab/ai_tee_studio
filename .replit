@@ -38,6 +38,7 @@ externalPort = 3000
 [userenv]
 
 [userenv.shared]
+ADMIN_UIDS = "DhWJDnC2XCg8phA482OfP0UWspx1"
 
 [nix]
 channel = "stable-25_05"
