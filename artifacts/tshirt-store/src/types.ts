@@ -1,4 +1,4 @@
-export type Page = 'workshop' | 'gallery' | 'dashboard' | 'orders' | 'login';
+export type Page = 'workshop' | 'gallery' | 'dashboard' | 'orders' | 'admin' | 'login';
 
 export interface UserProfile {
   uid: string;
