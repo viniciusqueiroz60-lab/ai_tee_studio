@@ -1,6 +1,6 @@
 import { logger } from "./logger";
 
-const REPLICATE_MODEL = "nightmareai/real-esrgan";
+const REPLICATE_VERSION = "f121d640bd286e1fdc67f9799164c1d5be36ff74576ee11c803ae5b665dd46aa";
 const POLL_INTERVAL_MS = 3000;
 const MAX_POLLS = 20;
 
@@ -18,7 +18,7 @@ export async function upscaleImage(imageInput: string): Promise<string> {
       ? imageInput
       : (imageInput.startsWith("data:") ? imageInput : `data:image/png;base64,${imageInput}`);
 
-    const createRes = await fetch(`https://api.replicate.com/v1/models/${REPLICATE_MODEL}/predictions`, {
+    const createRes = await fetch(`https://api.replicate.com/v1/predictions`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -26,6 +26,7 @@ export async function upscaleImage(imageInput: string): Promise<string> {
         Prefer: "wait=60",
       },
       body: JSON.stringify({
+        version: REPLICATE_VERSION,
         input: { image: imageRef, scale: 4, face_enhance: false },
       }),
     });
@@ -58,7 +59,7 @@ export async function upscaleImage(imageInput: string): Promise<string> {
 
     throw new Error("Upscaling timed out after polling");
   } catch (err) {
-    logger.error({ err }, "Upscaling failed — falling back to original image");
-    return base64Image;
+    logger.error({ err, imageInputPreview: imageInput.slice(0, 120) }, "Upscaling failed — falling back to original image");
+    return imageInput;
   }
 }
