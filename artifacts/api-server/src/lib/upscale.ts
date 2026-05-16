@@ -4,17 +4,19 @@ const REPLICATE_MODEL = "nightmareai/real-esrgan";
 const POLL_INTERVAL_MS = 3000;
 const MAX_POLLS = 20;
 
-export async function upscaleImage(base64Image: string): Promise<string> {
+export async function upscaleImage(imageInput: string): Promise<string> {
   const token = process.env.REPLICATE_API_TOKEN;
   if (!token) {
     logger.warn("REPLICATE_API_TOKEN not set — storing original image without upscaling");
-    return base64Image;
+    return imageInput;
   }
 
   try {
-    const dataUrl = base64Image.startsWith("data:")
-      ? base64Image
-      : `data:image/png;base64,${base64Image}`;
+    // Replicate works best with a public URL. If a data URL/base64 is passed,
+    // it may fail for large payloads — prefer passing an https URL.
+    const imageRef = imageInput.startsWith("http")
+      ? imageInput
+      : (imageInput.startsWith("data:") ? imageInput : `data:image/png;base64,${imageInput}`);
 
     const createRes = await fetch(`https://api.replicate.com/v1/models/${REPLICATE_MODEL}/predictions`, {
       method: "POST",
@@ -24,7 +26,7 @@ export async function upscaleImage(base64Image: string): Promise<string> {
         Prefer: "wait=60",
       },
       body: JSON.stringify({
-        input: { image: dataUrl, scale: 4, face_enhance: false },
+        input: { image: imageRef, scale: 4, face_enhance: false },
       }),
     });
 

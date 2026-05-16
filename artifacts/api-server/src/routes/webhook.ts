@@ -97,11 +97,20 @@ async function processCompletedOrder(session: Stripe.Checkout.Session): Promise<
 
   try {
     const bucket = getFirebaseStorageBucket();
-    const [tempImageBuffer] = await bucket.file(tempImagePath as string).download();
-    const imageBase64 = `data:image/png;base64,${tempImageBuffer.toString("base64")}`;
+    const tempFile = bucket.file(tempImagePath as string);
+
+    // Generate a short-lived signed URL so Replicate can fetch the image directly.
+    const [tempSignedUrl] = await tempFile.getSignedUrl({
+      action: "read",
+      expires: Date.now() + 60 * 60 * 1000, // 1 hour
+    });
 
     logger.info({ sessionId }, "Starting artwork upscaling");
-    const upscaledImage = await upscaleImage(imageBase64);
+    const upscaledImage = await upscaleImage(tempSignedUrl);
+
+    // For the fallback comparison below we still need the original bytes
+    const [tempImageBuffer] = await tempFile.download();
+    const imageBase64 = `data:image/png;base64,${tempImageBuffer.toString("base64")}`;
 
     const emailSlug = customerEmail.replace(/[@.]/g, "_").slice(0, 40);
     const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
