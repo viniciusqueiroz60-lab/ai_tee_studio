@@ -438,14 +438,32 @@ const WorkshopPage = ({
                   )}
                 </div>
             </div>
-             {currentDesign && (
-                 <button 
-                  onClick={() => onFinalize(currentDesign)}
-                  className="w-full bg-primary text-white py-3 rounded-xl shadow-lg shadow-primary/30 flex items-center justify-center gap-2 text-sm font-bold hover:bg-primary-dark transition-all"
-                 >
-                   <ShoppingBag className="w-4 h-4" /> Finalizar Artisan Print
-                 </button>
-               )}
+             <button 
+              onClick={() => {
+                if (currentDesign) {
+                  onFinalize(currentDesign);
+                } else {
+                  // Sem design gerado: usa o preview do estilo selecionado
+                  const style = stylesData.style_presets.find(s => s.id === selectedStyleId);
+                  const previewDesign: Design = {
+                    id: `design_${Date.now()}`,
+                    ownerId: user?.uid || 'guest',
+                    title: style ? `${style.label} Preview` : 'Preview Print',
+                    createdAt: new Date(),
+                    image: getStylePreviewPath(),
+                    prompt: '',
+                    originalPrompt: '',
+                    style: style ? style.label : 'Default',
+                    color: selectedColor,
+                    sales: 0
+                  };
+                  onFinalize(previewDesign);
+                }
+              }}
+              className="w-full bg-primary text-white py-3 rounded-xl shadow-lg shadow-primary/30 flex items-center justify-center gap-2 text-sm font-bold hover:bg-primary-dark transition-all"
+             >
+               <ShoppingBag className="w-4 h-4" /> {currentDesign ? 'Finalizar Artisan Print' : 'Comprar esta Camiseta'}
+             </button>
         </div>
       </section>
 
