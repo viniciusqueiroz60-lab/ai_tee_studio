@@ -66,7 +66,7 @@ router.post("/ai-studio/generate-image", ipRateLimit, async (req, res): Promise<
 
     const ai = getAI();
     const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash-preview-image-generation",
+      model: "gemini-2.5-flash-image-preview",
       contents: { parts: [{ text: `${prompt}. Isolated on a solid white background.` }] },
       config: {
         responseModalities: ["IMAGE", "TEXT"],
@@ -101,7 +101,7 @@ router.post("/ai-studio/refine", ipRateLimit, async (req, res): Promise<void> =>
     const base64Data = imageBase64.split(",")[1] || imageBase64;
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash-preview-image-generation",
+      model: "gemini-2.5-flash-image-preview",
       contents: {
         parts: [
           { inlineData: { data: base64Data, mimeType: "image/png" } },
