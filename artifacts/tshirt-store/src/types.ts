@@ -8,6 +8,7 @@ export interface UserProfile {
   tokens: number;
   accumulatedDiscount: number;
   totalSales: number;
+  points: number;
 }
 
 export interface Design {
@@ -22,6 +23,17 @@ export interface Design {
   style: string;
   color: string;
   sales: number;
+}
+
+export interface GalleryOrder {
+  id: string;
+  artworkUrl: string | null;
+  style: string;
+  uid: string | null;
+  customerEmail: string;
+  status: string;
+  shareInGallery: boolean;
+  createdAt: string;
 }
 
 export interface Foundation {

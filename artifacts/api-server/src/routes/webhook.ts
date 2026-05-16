@@ -1,5 +1,6 @@
 import { Router } from "express";
 import Stripe from "stripe";
+import { FieldValue } from "firebase-admin/firestore";
 import { logger } from "../lib/logger";
 import { getFirebaseFirestore, getFirebaseStorageBucket } from "../lib/firebase-admin";
 import { upscaleImage } from "../lib/upscale";
@@ -75,6 +76,9 @@ async function processCompletedOrder(session: Stripe.Checkout.Session): Promise<
     color,
     quantity,
     shareInGallery,
+    sourceOrderId,
+    sourceOwnerUid,
+    pointsToRedeem,
   } = pending;
 
   const customerEmail = pendingEmail ?? session.customer_details?.email ?? "unknown";
@@ -89,6 +93,9 @@ async function processCompletedOrder(session: Stripe.Checkout.Session): Promise<
     color: color ?? null,
     quantity: quantity ?? 1,
     shareInGallery: shareInGallery ?? false,
+    sourceOrderId: sourceOrderId ?? null,
+    sourceOwnerUid: sourceOwnerUid ?? null,
+    pointsRedeemed: pointsToRedeem ?? 0,
     status: "processing",
     amount: session.amount_total,
     currency: session.currency,
@@ -138,6 +145,60 @@ async function processCompletedOrder(session: Stripe.Checkout.Session): Promise<
       upscaled: imageBase64 !== upscaledImage,
       completedAt: new Date().toISOString(),
     });
+
+    // Award points to the original creator if this was a gallery remix
+    const pointsOps: Promise<unknown>[] = [];
+    if (sourceOwnerUid) {
+      const POINTS_PER_REMIX = 50;
+      pointsOps.push(
+        db.collection("users").doc(sourceOwnerUid as string).update({
+          points: FieldValue.increment(POINTS_PER_REMIX),
+        }).catch((err: unknown) => {
+          logger.warn({ err, sourceOwnerUid }, "Failed to award points to source owner");
+        })
+      );
+      pointsOps.push(
+        db.collection("pointsHistory").add({
+          type: "earned",
+          ownerUid: sourceOwnerUid,
+          points: POINTS_PER_REMIX,
+          reason: "gallery_remix",
+          sourceOrderId: sourceOrderId ?? null,
+          triggerOrderId: orderRef.id,
+          createdAt: new Date().toISOString(),
+        }).catch((err: unknown) => {
+          logger.warn({ err }, "Failed to record points history");
+        })
+      );
+    }
+
+    // Deduct redeemed points from buyer after confirmed payment
+    if (pointsToRedeem && uid) {
+      const pts = Number(pointsToRedeem);
+      if (pts > 0) {
+        pointsOps.push(
+          db.collection("users").doc(uid as string).update({
+            points: FieldValue.increment(-pts),
+          }).catch((err: unknown) => {
+            logger.warn({ err, uid }, "Failed to deduct redeemed points from buyer");
+          })
+        );
+        pointsOps.push(
+          db.collection("pointsHistory").add({
+            type: "redeemed",
+            ownerUid: uid,
+            points: -pts,
+            reason: "checkout_discount",
+            triggerOrderId: orderRef.id,
+            createdAt: new Date().toISOString(),
+          }).catch((err: unknown) => {
+            logger.warn({ err }, "Failed to record points redemption history");
+          })
+        );
+      }
+    }
+
+    await Promise.all(pointsOps);
 
     await pendingRef.delete();
     await bucket.file(tempImagePath as string).delete().catch((delErr: unknown) => {

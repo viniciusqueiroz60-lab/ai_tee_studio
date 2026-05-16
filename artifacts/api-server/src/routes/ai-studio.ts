@@ -132,7 +132,10 @@ router.post("/ai-studio/refine", ipRateLimit, async (req, res): Promise<void> =>
 
 router.post("/checkout/create-session", ipRateLimit, async (req, res): Promise<void> => {
   try {
-    const { model, size, quantity, color, shareInGallery, imageBase64, style, customerEmail, uid } = req.body;
+    const {
+      model, size, quantity, color, shareInGallery, imageBase64, style,
+      customerEmail, uid, sourceOrderId, sourceOwnerUid, usePoints,
+    } = req.body;
 
     if (!imageBase64) {
       res.status(400).json({ error: "imageBase64 is required" });
@@ -141,6 +144,23 @@ router.post("/checkout/create-session", ipRateLimit, async (req, res): Promise<v
 
     const { getFirebaseFirestore, getFirebaseStorageBucket } = await import("../lib/firebase-admin");
     const firestoreDb = getFirebaseFirestore();
+
+    // Resolve points discount if requested
+    let pointsToRedeem = 0;
+    let discountCents = 0;
+    if (usePoints && uid) {
+      const userDoc = await firestoreDb.collection("users").doc(uid).get();
+      if (userDoc.exists) {
+        const userPoints: number = (userDoc.data()?.points ?? 0) as number;
+        if (userPoints >= 50) {
+          pointsToRedeem = userPoints;
+          discountCents = Math.floor(userPoints / 10) * 100; // 10 pts = R$1 = 100 cents
+        }
+      }
+    }
+
+    const baseUnitAmount = 14990; // R$149.90
+    const finalUnitAmount = Math.max(1000, baseUnitAmount - discountCents); // min R$10
 
     const pendingOrderId = randomUUID();
 
@@ -162,6 +182,9 @@ router.post("/checkout/create-session", ipRateLimit, async (req, res): Promise<v
       color: color ?? null,
       quantity: quantity ?? 1,
       shareInGallery: shareInGallery ?? false,
+      sourceOrderId: sourceOrderId ?? null,
+      sourceOwnerUid: sourceOwnerUid ?? null,
+      pointsToRedeem,
       createdAt: new Date().toISOString(),
     };
 
@@ -173,6 +196,10 @@ router.post("/checkout/create-session", ipRateLimit, async (req, res): Promise<v
       const domains = process.env.REPLIT_DOMAINS?.split(",")[0];
       const baseUrl = domains ? `https://${domains}` : "http://localhost:80";
 
+      const productName = sourceOwnerUid
+        ? `Camiseta AI T-Studio — ${style ?? "Arte Exclusiva"} (Remix da Galeria)`
+        : `Camiseta AI T-Studio — ${style ?? "Arte Exclusiva"}`;
+
       session = await stripe.checkout.sessions.create({
         payment_method_types: ["card"],
         customer_email: customerEmail ?? undefined,
@@ -180,8 +207,8 @@ router.post("/checkout/create-session", ipRateLimit, async (req, res): Promise<v
         line_items: [{
           price_data: {
             currency: "brl",
-            product_data: { name: `Camiseta AI T-Studio — ${style ?? "Arte Exclusiva"}` },
-            unit_amount: 14990,
+            product_data: { name: productName },
+            unit_amount: finalUnitAmount,
           },
           quantity: quantity ?? 1,
         }],
@@ -195,6 +222,9 @@ router.post("/checkout/create-session", ipRateLimit, async (req, res): Promise<v
           shirt_style: (style ?? "").slice(0, 100),
           quantity: String(quantity ?? 1),
           share_in_gallery: shareInGallery ? "true" : "false",
+          source_order_id: (sourceOrderId ?? "").slice(0, 100),
+          source_owner_uid: (sourceOwnerUid ?? "").slice(0, 100),
+          points_redeemed: String(pointsToRedeem),
         },
       });
     } catch (stripeErr) {

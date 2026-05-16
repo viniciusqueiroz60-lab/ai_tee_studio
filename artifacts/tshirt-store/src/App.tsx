@@ -57,7 +57,7 @@ import { getStorage, ref as storageRef, uploadString, getDownloadURL } from 'fir
 import firebaseConfig from '../firebase-applet-config.json';
 
 // Local
-import { Page, UserProfile, Design, Foundation, ColorOption } from './types.ts';
+import { Page, UserProfile, Design, GalleryOrder, Foundation, ColorOption } from './types.ts';
 import AdminPage from './AdminPage.tsx';
 import { generateDesignPrompt, generateDesignImage, refineDesignImage } from './services/geminiService.ts';
 import { removeWhiteBackground } from './services/imageUtils.ts';
@@ -200,12 +200,16 @@ const WorkshopPage = ({
   user, 
   onShowLogin, 
   onFinalize,
-  onDeductToken 
+  onDeductToken,
+  initialRemixDesign,
+  onClearRemix
 }: { 
   user: UserProfile | null, 
   onShowLogin: () => void, 
   onFinalize: (d: Design) => void,
-  onDeductToken: () => Promise<boolean>
+  onDeductToken: () => Promise<boolean>,
+  initialRemixDesign?: Design | null,
+  onClearRemix?: () => void
 }) => {
   const [selectedStyleId, setSelectedStyleId] = useState(stylesData.style_presets[0].id);
   const [artisticConcept, setArtisticConcept] = useState('');
@@ -215,6 +219,30 @@ const WorkshopPage = ({
   const [currentDesign, setCurrentDesign] = useState<Design | null>(null);
   const [isRefining, setIsRefining] = useState(false);
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (initialRemixDesign) {
+      setCurrentDesign(initialRemixDesign);
+      setArtisticConcept(initialRemixDesign.originalPrompt || '');
+      setSelectedColor(initialRemixDesign.color || 'white');
+    }
+  }, [initialRemixDesign]);
+
+  const [galleryPreview, setGalleryPreview] = useState<GalleryOrder[]>([]);
+  useEffect(() => {
+    getDocs(query(
+      collection(db, 'orders'),
+      where('shareInGallery', '==', true),
+      limit(12)
+    )).then(snapshot => {
+      setGalleryPreview(
+        snapshot.docs
+          .map(d => ({ id: d.id, ...d.data() } as GalleryOrder))
+          .filter(o => o.status === 'aguardando_producao' && o.artworkUrl)
+          .slice(0, 6)
+      );
+    }).catch(() => {});
+  }, []);
 
   const handleInitialGenerate = async () => {
     if (!artisticConcept) return;
@@ -344,7 +372,7 @@ const WorkshopPage = ({
               />
               {currentDesign && (
                 <button 
-                  onClick={() => { setCurrentDesign(null); setArtisticConcept(''); }}
+                  onClick={() => { setCurrentDesign(null); setArtisticConcept(''); onClearRemix?.(); }}
                   className="text-[10px] text-gray-400 hover:text-red-500 flex items-center gap-1 font-bold"
                 >
                   <X className="w-3 h-3" /> Clear
@@ -496,11 +524,16 @@ const WorkshopPage = ({
             <ChevronLeft className="w-6 h-6 text-primary" />
           </button>
           <div ref={scrollRef} className="flex gap-6 overflow-x-auto pb-4 scrollbar-hide">
-            {[1, 2, 3, 4, 5, 6].map(i => (
-              <div key={i} className="flex-shrink-0 w-48 h-64 rounded-2xl overflow-hidden bg-gray-200">
-                <img src={`https://picsum.photos/seed/${i}/400/600`} alt="arte" className="w-full h-full object-cover" />
-              </div>
-            ))}
+            {galleryPreview.length > 0
+              ? galleryPreview.map(order => (
+                <div key={order.id} className="flex-shrink-0 w-48 h-64 rounded-2xl overflow-hidden bg-gray-200">
+                  <img src={order.artworkUrl!} alt={order.style} className="w-full h-full object-cover" />
+                </div>
+              ))
+              : [1, 2, 3, 4, 5, 6].map(i => (
+                <div key={i} className="flex-shrink-0 w-48 h-64 rounded-2xl overflow-hidden bg-gray-100 animate-pulse" />
+              ))
+            }
           </div>
           <button onClick={() => scroll('right')} className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/80 p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
             <ChevronRight className="w-6 h-6 text-primary" />
@@ -556,14 +589,18 @@ const DashboardPage = ({ user, designs }: { user: UserProfile, designs: Design[]
 
         <div className="bg-graphite p-8 rounded-[2rem] text-white flex flex-col justify-between h-56 shadow-xl">
           <div className="flex justify-between items-center opacity-60">
-            <span className="text-xs font-bold uppercase tracking-widest">Rebates Acumulados</span>
-            <Wallet className="w-5 h-5" />
+            <span className="text-xs font-bold uppercase tracking-widest">Pontos de Rebate</span>
+            <Coins className="w-5 h-5" />
           </div>
           <div className="mt-4">
-            <p className="text-4xl font-bold text-alabaster">R$ {user.accumulatedDiscount.toFixed(2)}</p>
-            <p className="text-[10px] opacity-60 mt-1 font-medium">Ganhos reais a partir de replicas da galeria.</p>
+            <p className="text-4xl font-bold text-alabaster">{user.points ?? 0}</p>
+            <p className="text-[10px] opacity-60 mt-1 font-medium">
+              {(user.points ?? 0) >= 50
+                ? `≈ R$ ${Math.floor((user.points ?? 0) / 10).toFixed(2)} de desconto disponível`
+                : 'Ganhos quando outros usam sua arte como base.'}
+            </p>
           </div>
-          <button className="w-full bg-alabaster/10 hover:bg-alabaster/20 py-3 rounded-xl text-xs font-bold transition-all border border-alabaster/10">Resgatar como Crédito</button>
+          <div className="text-[10px] opacity-50 font-medium">Use no próximo checkout (min. 50 pts)</div>
         </div>
 
         <div className="bg-white p-8 rounded-[2rem] border border-outline-subtle shadow-sm flex flex-col justify-between h-56">
@@ -619,16 +656,36 @@ const DashboardPage = ({ user, designs }: { user: UserProfile, designs: Design[]
   );
 };
 
-const GalleryPage = ({ onRemix }: { onRemix: (d: Design) => void }) => {
-  const [designs, setDesigns] = useState<Design[]>([]);
+const GalleryPage = ({ onRemix }: { onRemix: (order: GalleryOrder) => void }) => {
+  const [orders, setOrders] = useState<GalleryOrder[]>([]);
+  const [userNames, setUserNames] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const q = query(collection(db, 'designs'), orderBy('sales', 'desc'), limit(20));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Design));
-      setDesigns(data);
+    const q = query(
+      collection(db, 'orders'),
+      where('shareInGallery', '==', true),
+      orderBy('createdAt', 'desc'),
+      limit(30)
+    );
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
+      const data = snapshot.docs
+        .map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as GalleryOrder))
+        .filter(o => o.status === 'aguardando_producao' && o.artworkUrl);
+      setOrders(data);
       setLoading(false);
+
+      const uids = [...new Set(data.map(o => o.uid).filter((uid): uid is string => !!uid))];
+      if (uids.length > 0) {
+        const names: Record<string, string> = {};
+        await Promise.all(uids.map(async (uid) => {
+          try {
+            const userDoc = await getDoc(doc(db, 'users', uid));
+            if (userDoc.exists()) names[uid] = (userDoc.data() as UserProfile).name;
+          } catch { /* ignore */ }
+        }));
+        setUserNames(prev => ({ ...prev, ...names }));
+      }
     });
     return () => unsubscribe();
   }, []);
@@ -638,47 +695,65 @@ const GalleryPage = ({ onRemix }: { onRemix: (d: Design) => void }) => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-4xl font-bold tracking-tight">Galeria Comunitária</h1>
-          <p className="text-gray-500 mt-2">Designs que estão definindo a cultura artisan desta semana.</p>
+          <p className="text-gray-500 mt-2">Designs criados e compartilhados pela comunidade artisan.</p>
         </div>
         <div className="flex gap-2">
-           <span className="bg-primary/10 text-primary text-[10px] font-black px-4 py-2 rounded-full border border-primary/20 uppercase tracking-widest">🔥 Tendências</span>
+          <span className="bg-primary/10 text-primary text-[10px] font-black px-4 py-2 rounded-full border border-primary/20 uppercase tracking-widest">🔥 Tendências</span>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-12">
-        {designs.map(d => (
-          <motion.div 
-            key={d.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="group relative flex flex-col gap-4 cursor-pointer"
-          >
-            <div className="aspect-[4/5] rounded-[2rem] overflow-hidden bg-gray-100 border border-outline-subtle/20 shadow-lg relative group/item">
-              <img src={d.image} alt={d.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-              <div className="absolute inset-0 bg-graphite/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-4 backdrop-blur-sm">
-                <button 
-                  onClick={() => onRemix(d)}
-                  className="bg-alabaster text-graphite px-8 py-3 rounded-2xl font-bold text-sm shadow-xl active:scale-95 transition-all flex items-center gap-2"
-                >
-                  <Sparkles className="w-4 h-4 text-primary" /> Remix e Ganhe 20%
-                </button>
-                <div className="flex gap-2">
-                   <button className="bg-white/20 p-3 rounded-full hover:bg-white/40 transition-colors"><Heart className="w-4 h-4 text-white" /></button>
-                   <button className="bg-white/20 p-3 rounded-full hover:bg-white/40 transition-colors"><Maximize2 className="w-4 h-4 text-white" /></button>
+      {loading ? (
+        <div className="py-20 flex justify-center">
+          <RefreshCw className="w-8 h-8 text-primary animate-spin" />
+        </div>
+      ) : orders.length === 0 ? (
+        <div className="bg-gray-50 border-2 border-dashed border-outline-subtle p-16 rounded-3xl flex flex-col items-center justify-center gap-4 text-center">
+          <ImageIcon className="w-12 h-12 text-gray-300" />
+          <div>
+            <p className="font-bold text-gray-500">Nenhum design na galeria ainda.</p>
+            <p className="text-sm text-gray-400 mt-1">Seja o primeiro! Autorize o compartilhamento no checkout.</p>
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-12">
+          {orders.map(order => (
+            <motion.div
+              key={order.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="group relative flex flex-col gap-4 cursor-pointer"
+            >
+              <div className="aspect-[4/5] rounded-[2rem] overflow-hidden bg-gray-100 border border-outline-subtle/20 shadow-lg relative">
+                <img src={order.artworkUrl!} alt={order.style} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                <div className="absolute inset-0 bg-graphite/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-4 backdrop-blur-sm">
+                  <button
+                    onClick={() => onRemix(order)}
+                    className="bg-alabaster text-graphite px-8 py-3 rounded-2xl font-bold text-sm shadow-xl active:scale-95 transition-all flex items-center gap-2"
+                  >
+                    <Sparkles className="w-4 h-4 text-primary" /> Usar como Base
+                  </button>
+                  <div className="flex gap-2">
+                    <button className="bg-white/20 p-3 rounded-full hover:bg-white/40 transition-colors"><Heart className="w-4 h-4 text-white" /></button>
+                    <button className="bg-white/20 p-3 rounded-full hover:bg-white/40 transition-colors"><Maximize2 className="w-4 h-4 text-white" /></button>
+                  </div>
+                </div>
+                <div className="absolute top-4 right-4 bg-white/90 px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-xl">
+                  <Sparkles className="w-3 h-3 text-primary" />
+                  <span className="text-[10px] font-bold">Arte Artisan</span>
                 </div>
               </div>
-              <div className="absolute top-4 right-4 bg-white px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-xl">
-                 <ShoppingCart className="w-3 h-3 text-primary" />
-                 <span className="text-[10px] font-bold">{d.sales} Vendas</span>
+              <div className="px-2">
+                <h3 className="font-bold text-lg">{order.style || 'Arte Artisan'}</h3>
+                <p className="text-[10px] font-medium text-gray-400 mt-1 uppercase tracking-widest">
+                  por {order.uid
+                    ? (userNames[order.uid] || `Artesão #${order.uid.slice(-6)}`)
+                    : `${(order.customerEmail || '').slice(0, 10)}…`}
+                </p>
               </div>
-            </div>
-            <div className="px-2">
-               <h3 className="font-bold text-lg">{d.title}</h3>
-               <p className="text-[10px] font-medium text-gray-400 mt-1 uppercase tracking-widest">Artesão ID: #{d.ownerId.slice(-6)}</p>
-            </div>
-          </motion.div>
-        ))}
-      </div>
+            </motion.div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
@@ -688,16 +763,23 @@ const CheckoutSidebar = ({
   onClose, 
   design,
   user,
+  sourceOrderId,
+  sourceOwnerUid,
 }: { 
   isOpen: boolean, 
   onClose: () => void, 
   design: Design | null,
   user: UserProfile | null,
+  sourceOrderId?: string | null,
+  sourceOwnerUid?: string | null,
 }) => {
   const [quantity, setQuantity] = useState(1);
   const [size, setSize] = useState('M');
   const [fit, setFit] = useState('oversized');
   const [shareInGallery, setShareInGallery] = useState(true);
+  const [usePoints, setUsePoints] = useState(false);
+  const userPoints = user?.points ?? 0;
+  const pointsDiscount = usePoints && userPoints >= 50 ? Math.floor(userPoints / 10) : 0;
 
   if (!design) return null;
 
@@ -734,6 +816,9 @@ const CheckoutSidebar = ({
           customerEmail: user?.email ?? null,
           uid: user?.uid ?? null,
           shareInGallery,
+          sourceOrderId: sourceOrderId ?? null,
+          sourceOwnerUid: sourceOwnerUid ?? null,
+          usePoints: usePoints && userPoints >= 50,
         })
       });
       
@@ -841,9 +926,36 @@ const CheckoutSidebar = ({
                     className="w-5 h-5 accent-primary"
                   />
                   <label htmlFor="shareInGallery" className="text-xs font-bold text-gray-900">
-                    Compartilhar meu design na Galeria Pública para acumular descontos
+                    Compartilhar meu design na Galeria Pública — ganho pontos quando outros usarem como base
                   </label>
                 </div>
+
+                {userPoints >= 50 && (
+                  <div className="flex items-center justify-between p-4 bg-amber-50 rounded-2xl border border-amber-200">
+                    <div className="flex items-center gap-3">
+                      <Coins className="w-5 h-5 text-amber-600 flex-shrink-0" />
+                      <div>
+                        <p className="text-xs font-bold text-amber-900">{userPoints} pontos disponíveis</p>
+                        <p className="text-[10px] text-amber-700">= R$ {Math.floor(userPoints / 10).toFixed(2).replace('.', ',')} de desconto</p>
+                      </div>
+                    </div>
+                    <input
+                      type="checkbox"
+                      id="usePoints"
+                      checked={usePoints}
+                      onChange={e => setUsePoints(e.target.checked)}
+                      className="w-5 h-5 accent-primary flex-shrink-0"
+                    />
+                    <label htmlFor="usePoints" className="sr-only">Usar pontos</label>
+                  </div>
+                )}
+
+                {sourceOwnerUid && (
+                  <div className="flex items-center gap-2 p-3 bg-primary/5 rounded-xl border border-primary/10">
+                    <Sparkles className="w-4 h-4 text-primary flex-shrink-0" />
+                    <p className="text-[10px] font-bold text-primary">Usando arte da galeria como base — o criador original receberá pontos de rebate!</p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -852,8 +964,16 @@ const CheckoutSidebar = ({
                 <div>
                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Subtotal Estimado</p>
                    <p className="text-[10px] text-gray-400 italic">Frete e Masterização inclusos</p>
+                   {pointsDiscount > 0 && (
+                     <p className="text-[10px] text-green-600 font-bold mt-1">- R$ {pointsDiscount.toFixed(2).replace('.', ',')} (pontos)</p>
+                   )}
                 </div>
-                <p className="text-4xl font-bold text-graphite tracking-tight">R$ {(149.90 * quantity).toFixed(2).replace('.', ',')}</p>
+                <div className="text-right">
+                  {pointsDiscount > 0 && (
+                    <p className="text-sm text-gray-400 line-through">R$ {(149.90 * quantity).toFixed(2).replace('.', ',')}</p>
+                  )}
+                  <p className="text-4xl font-bold text-graphite tracking-tight">R$ {Math.max(10, 149.90 * quantity - pointsDiscount).toFixed(2).replace('.', ',')}</p>
+                </div>
               </div>
               <button 
                 onClick={checkoutToStripe}
@@ -1106,6 +1226,8 @@ export default function App() {
   const [pendingFinalize, setPendingFinalize] = useState<Design | null>(null);
   const [loading, setLoading] = useState(true);
   const [showOrderSuccess, setShowOrderSuccess] = useState(false);
+  const [remixDesign, setRemixDesign] = useState<Design | null>(null);
+  const [remixSource, setRemixSource] = useState<{ orderId: string; ownerUid: string } | null>(null);
 
   // Detect Stripe success redirect (?success=true) → go to Orders page with banner
   useEffect(() => {
@@ -1150,7 +1272,8 @@ export default function App() {
               avatar: fbUser.photoURL || 'https://ui-avatars.com/api/?name=' + fbUser.displayName,
               tokens: 20, // Welcome gift
               accumulatedDiscount: 0,
-              totalSales: 0
+              totalSales: 0,
+              points: 0,
             };
             await setDoc(doc(db, 'users', fbUser.uid), newUser);
             setUser(newUser);
@@ -1170,7 +1293,8 @@ export default function App() {
             avatar: fbUser.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(fbUser.displayName || 'U')}`,
             tokens: 0,
             accumulatedDiscount: 0,
-            totalSales: 0
+            totalSales: 0,
+            points: 0,
           };
           setUser(fallbackUser);
           setPage('dashboard');
@@ -1283,11 +1407,23 @@ export default function App() {
     setIsCheckoutOpen(true);
   };
 
-  const handleRemix = (parentDesign: Design) => {
+  const handleRemix = (order: GalleryOrder) => {
+    if (!order.artworkUrl) return;
+    const design: Design = {
+      id: `design_${Date.now()}`,
+      ownerId: user?.uid || 'guest',
+      title: order.style || 'Arte Artisan',
+      createdAt: new Date(),
+      image: order.artworkUrl,
+      prompt: '',
+      originalPrompt: '',
+      style: order.style || 'Default',
+      color: 'white',
+      sales: 0,
+    };
+    setRemixDesign(design);
+    setRemixSource(order.uid ? { orderId: order.id, ownerUid: order.uid } : null);
     setPage('workshop');
-    // Pre-fill concept or some logic could go here
-    // For now we just reset the workshop with context
-    alert(`Preparando Remix de: ${parentDesign.title}. Você ganhará créditos se outros replicarem sua nova versão!`);
   };
 
   if (loading) {
@@ -1320,6 +1456,8 @@ export default function App() {
                 onShowLogin={() => setPage('login')} 
                 onFinalize={finalizeDesign}
                 onDeductToken={handleDeductToken}
+                initialRemixDesign={remixDesign}
+                onClearRemix={() => { setRemixDesign(null); setRemixSource(null); }}
               />
             </motion.div>
           ) : page === 'gallery' ? (
@@ -1399,6 +1537,8 @@ export default function App() {
         onClose={() => setIsCheckoutOpen(false)} 
         design={selectedDesignForCheckout}
         user={user}
+        sourceOrderId={remixSource?.orderId ?? null}
+        sourceOwnerUid={remixSource?.ownerUid ?? null}
       />
     </div>
   );
