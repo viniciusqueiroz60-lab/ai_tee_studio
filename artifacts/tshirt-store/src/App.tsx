@@ -48,6 +48,7 @@ import {
   limit,
   onSnapshot
 } from 'firebase/firestore';
+import { getStorage, ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
 import firebaseConfig from '../firebase-applet-config.json';
 
 // Local
@@ -62,6 +63,7 @@ import { getApps, getApp } from 'firebase/app';
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
 const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+const storage = getStorage(app);
 
 
 // --- DATA ---
@@ -949,12 +951,22 @@ export default function App() {
     
     // Save design to Firestore if it's new
     if (design.id.startsWith('design_')) {
+      let imageUrl = design.image;
+      // Se a imagem ainda é base64 (data URL), faz upload pro Storage primeiro
+      if (imageUrl.startsWith('data:')) {
+        const path = `designs/${user.uid}/${Date.now()}.png`;
+        const ref = storageRef(storage, path);
+        await uploadString(ref, imageUrl, 'data_url');
+        imageUrl = await getDownloadURL(ref);
+      }
       const designRef = await addDoc(collection(db, 'designs'), {
         ...design,
+        image: imageUrl,
         ownerId: user.uid,
         createdAt: serverTimestamp(),
       });
       design.id = designRef.id;
+      design.image = imageUrl;
     }
     
     setSelectedDesignForCheckout(design);
