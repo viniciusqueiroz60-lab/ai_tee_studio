@@ -909,14 +909,22 @@ export default function App() {
   }, [user]);
 
   const handleLogin = async () => {
+    console.log('[handleLogin] Iniciando login...');
     const provider = new GoogleAuthProvider();
     try {
-      await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, provider);
+      console.log('[handleLogin] Sucesso! UID:', result.user.uid, 'Email:', result.user.email);
     } catch (error: unknown) {
-      console.error("handleLogin: Login Error:", error);
+      console.error("[handleLogin] Erro:", error);
       const code = (error as { code?: string })?.code;
+      const message = (error as { message?: string })?.message;
+      console.error("[handleLogin] Code:", code, "Message:", message);
       if (code === 'auth/unauthorized-domain') {
         alert('Domínio não autorizado no Firebase.\n\nAcesse o Firebase Console → Authentication → Settings → Authorized domains e adicione:\n\n' + window.location.hostname);
+      } else if (code === 'auth/popup-blocked' || code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+        alert('O popup de login foi bloqueado pelo navegador.\n\nAbra o app em uma aba nova: ' + window.location.origin);
+      } else {
+        alert('Erro no login: ' + (message || code || 'desconhecido'));
       }
     }
   };
