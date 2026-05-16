@@ -7,9 +7,29 @@ let app: admin.app.App;
 
 function getFirebaseAdmin(): admin.app.App {
   if (!app) {
-    const privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY?.replace(/\\n/g, "\n");
-    const clientEmail = process.env.FIREBASE_ADMIN_CLIENT_EMAIL;
-    const projectId = process.env.FIREBASE_PROJECT_ID;
+    let privateKey: string | undefined;
+    let clientEmail: string | undefined;
+    let projectId: string | undefined;
+
+    // Preferred: full service account JSON in one secret
+    const jsonSecret = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+    if (jsonSecret) {
+      try {
+        const parsed = JSON.parse(jsonSecret);
+        privateKey = parsed.private_key;
+        clientEmail = parsed.client_email;
+        projectId = parsed.project_id;
+      } catch (e) {
+        logger.error({ err: e }, "Failed to parse FIREBASE_SERVICE_ACCOUNT_JSON");
+        throw new Error("FIREBASE_SERVICE_ACCOUNT_JSON is not valid JSON");
+      }
+    } else {
+      // Fallback: separate env vars
+      privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY?.replace(/\\n/g, "\n");
+      clientEmail = process.env.FIREBASE_ADMIN_CLIENT_EMAIL;
+      projectId = process.env.FIREBASE_PROJECT_ID;
+    }
+
     const storageBucket = process.env.FIREBASE_STORAGE_BUCKET;
 
     if (!privateKey || !clientEmail || !projectId) {
