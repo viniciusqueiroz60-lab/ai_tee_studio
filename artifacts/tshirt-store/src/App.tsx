@@ -822,6 +822,7 @@ export default function App() {
   const [userDesigns, setUserDesigns] = useState<Design[]>([]);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [selectedDesignForCheckout, setSelectedDesignForCheckout] = useState<Design | null>(null);
+  const [pendingFinalize, setPendingFinalize] = useState<Design | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Auth Listener
@@ -910,6 +911,17 @@ export default function App() {
     return () => unsubscribe();
   }, [user]);
 
+  // Após login bem-sucedido, retoma o checkout do design pendente
+  useEffect(() => {
+    if (user && pendingFinalize) {
+      const design = pendingFinalize;
+      setPendingFinalize(null);
+      setPage('workshop');
+      finalizeDesign(design);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, pendingFinalize]);
+
   const handleLogin = async () => {
     console.log('[handleLogin] Iniciando login...');
     const provider = new GoogleAuthProvider();
@@ -945,7 +957,10 @@ export default function App() {
 
   const finalizeDesign = async (design: Design) => {
     if (!user) {
-      setPage('login');
+      // Salva o design pendente e dispara o fluxo de login.
+      // Após autenticar, o useEffect abaixo retoma o checkout automaticamente.
+      setPendingFinalize(design);
+      await handleLogin();
       return;
     }
     
