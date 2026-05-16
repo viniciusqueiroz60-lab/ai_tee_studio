@@ -26,7 +26,12 @@ import {
   Image as ImageIcon,
   Flame,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Package,
+  Clock,
+  CheckCircle2,
+  AlertCircle,
+  RefreshCw
 } from 'lucide-react';
 
 // Firebase
@@ -131,6 +136,14 @@ const Header = ({ page, setPage, user, onLogin, onLogout }: {
               className={`text-sm font-bold transition-all ${page === 'dashboard' ? 'text-primary border-b-2 border-primary pb-1' : 'text-gray-500 hover:text-primary'}`}
             >
               Painel
+            </button>
+          )}
+          {user && (
+            <button
+              onClick={() => setPage('orders')}
+              className={`text-sm font-bold transition-all ${page === 'orders' ? 'text-primary border-b-2 border-primary pb-1' : 'text-gray-500 hover:text-primary'}`}
+            >
+              Meus Pedidos
             </button>
           )}
         </nav>
@@ -852,6 +865,229 @@ const CheckoutSidebar = ({
 
 // --- APP ROOT ---
 
+interface OrderItem {
+  id: string;
+  status: string;
+  sessionId: string;
+  style: string;
+  model: string | null;
+  size: string | null;
+  color: string | null;
+  quantity: number;
+  amount: number | null;
+  currency: string | null;
+  artworkUrl: string | null;
+  upscaled: boolean;
+  createdAt: string;
+  completedAt: string | null;
+}
+
+const STATUS_INFO: Record<string, { label: string; icon: any; color: string; bg: string; description: string }> = {
+  processing: {
+    label: 'Processando',
+    icon: RefreshCw,
+    color: 'text-blue-600',
+    bg: 'bg-blue-50 border-blue-200',
+    description: 'Pagamento confirmado. Gerando arte em alta resolução…',
+  },
+  aguardando_producao: {
+    label: 'Aguardando produção',
+    icon: CheckCircle2,
+    color: 'text-green-600',
+    bg: 'bg-green-50 border-green-200',
+    description: 'Arte pronta! Sua camiseta entrará em produção em breve.',
+  },
+  erro_processamento: {
+    label: 'Erro no processamento',
+    icon: AlertCircle,
+    color: 'text-red-600',
+    bg: 'bg-red-50 border-red-200',
+    description: 'Tivemos um problema. Nossa equipe entrará em contato.',
+  },
+};
+
+const MyOrdersPage = ({ user, showSuccessBanner, onDismissBanner }: {
+  user: UserProfile,
+  showSuccessBanner: boolean,
+  onDismissBanner: () => void,
+}) => {
+  const [orders, setOrders] = useState<OrderItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadOrders = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const fbUser = auth.currentUser;
+      if (!fbUser) {
+        setError('Sessão expirada. Faça login novamente.');
+        setLoading(false);
+        return;
+      }
+      const token = await fbUser.getIdToken();
+      const res = await fetch('/api/orders/me', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setOrders(data.orders || []);
+    } catch (err) {
+      console.error('Failed to load orders', err);
+      setError('Não foi possível carregar seus pedidos.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadOrders();
+    // Auto-refresh every 8 seconds while there's any processing order
+    const interval = setInterval(() => {
+      setOrders(prev => {
+        if (prev.some(o => o.status === 'processing')) {
+          loadOrders();
+        }
+        return prev;
+      });
+    }, 8000);
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user.uid]);
+
+  const formatCurrency = (amount: number | null, currency: string | null) => {
+    if (!amount) return '—';
+    const value = amount / 100;
+    const cur = (currency || 'brl').toUpperCase();
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: cur }).format(value);
+  };
+
+  const formatDate = (iso: string) => {
+    try {
+      return new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+    } catch {
+      return iso;
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-8 py-10">
+      <div className="flex justify-between items-end">
+        <div>
+          <h1 className="text-4xl font-bold text-gray-900 tracking-tight">Meus Pedidos</h1>
+          <p className="text-gray-500 mt-2">Acompanhe o status de cada camiseta personalizada.</p>
+        </div>
+        <button
+          onClick={loadOrders}
+          className="flex items-center gap-2 text-sm font-bold text-primary hover:text-primary-dark transition-colors"
+        >
+          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          Atualizar
+        </button>
+      </div>
+
+      {showSuccessBanner && (
+        <div className="bg-green-50 border border-green-200 rounded-2xl p-5 flex items-start justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <CheckCircle2 className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold text-green-900">Pagamento confirmado!</p>
+              <p className="text-sm text-green-800 mt-1">
+                Estamos gerando a arte em alta resolução. Em alguns instantes seu pedido aparecerá abaixo como
+                <span className="font-bold"> &ldquo;Aguardando produção&rdquo;</span>.
+              </p>
+            </div>
+          </div>
+          <button onClick={onDismissBanner} className="text-green-700 hover:text-green-900">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+      )}
+
+      {loading && orders.length === 0 ? (
+        <div className="py-20 flex justify-center">
+          <RefreshCw className="w-8 h-8 text-primary animate-spin" />
+        </div>
+      ) : error ? (
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-red-800">
+          {error}
+        </div>
+      ) : orders.length === 0 ? (
+        <div className="bg-gray-50 border-2 border-dashed border-outline-subtle p-16 rounded-3xl flex flex-col items-center justify-center gap-4 text-center">
+          <Package className="w-12 h-12 text-gray-300" />
+          <div>
+            <p className="font-bold text-gray-500">Você ainda não fez nenhum pedido.</p>
+            <p className="text-sm text-gray-400 mt-1">Vá para a Oficina e crie sua primeira camiseta!</p>
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-4">
+          {orders.map(order => {
+            const statusKey = order.status in STATUS_INFO ? order.status : 'processing';
+            const info = STATUS_INFO[statusKey];
+            const Icon = info.icon;
+            const isProcessing = order.status === 'processing';
+            return (
+              <div key={order.id} className="bg-white border border-outline-subtle rounded-3xl overflow-hidden shadow-sm">
+                <div className="flex flex-col md:flex-row gap-6 p-6">
+                  <div className="flex-shrink-0 w-full md:w-40 h-40 rounded-2xl overflow-hidden bg-gray-50 border border-outline-subtle/50 flex items-center justify-center">
+                    {order.artworkUrl ? (
+                      <img src={order.artworkUrl} alt={order.style} className="w-full h-full object-contain" />
+                    ) : (
+                      <RefreshCw className="w-8 h-8 text-gray-300 animate-spin" />
+                    )}
+                  </div>
+
+                  <div className="flex-1 flex flex-col gap-3">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <h3 className="text-lg font-bold text-gray-900">{order.style || 'Camiseta personalizada'}</h3>
+                        <p className="text-xs text-gray-400 mt-1">
+                          Pedido #{order.id.slice(0, 8)} · {formatDate(order.createdAt)}
+                        </p>
+                      </div>
+                      <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border ${info.bg}`}>
+                        <Icon className={`w-4 h-4 ${info.color} ${isProcessing ? 'animate-spin' : ''}`} />
+                        <span className={`text-xs font-bold ${info.color}`}>{info.label}</span>
+                      </div>
+                    </div>
+
+                    <p className="text-sm text-gray-600">{info.description}</p>
+
+                    <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs text-gray-500 mt-2">
+                      {order.model && <span><span className="font-bold text-gray-700">Modelo:</span> {order.model}</span>}
+                      {order.color && <span><span className="font-bold text-gray-700">Cor:</span> {order.color}</span>}
+                      {order.size && <span><span className="font-bold text-gray-700">Tamanho:</span> {order.size}</span>}
+                      <span><span className="font-bold text-gray-700">Qtd:</span> {order.quantity}</span>
+                      <span><span className="font-bold text-gray-700">Valor:</span> {formatCurrency(order.amount, order.currency)}</span>
+                      {order.upscaled && (
+                        <span className="text-primary font-bold flex items-center gap-1">
+                          <Sparkles className="w-3 h-3" /> Upscale 4x aplicado
+                        </span>
+                      )}
+                    </div>
+
+                    {order.artworkUrl && (
+                      <a
+                        href={order.artworkUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="self-start mt-2 inline-flex items-center gap-2 text-xs font-bold text-primary hover:text-primary-dark"
+                      >
+                        <Download className="w-3 h-3" /> Baixar arte final
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default function App() {
   const [page, setPage] = useState<Page>('workshop');
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -860,6 +1096,20 @@ export default function App() {
   const [selectedDesignForCheckout, setSelectedDesignForCheckout] = useState<Design | null>(null);
   const [pendingFinalize, setPendingFinalize] = useState<Design | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showOrderSuccess, setShowOrderSuccess] = useState(false);
+
+  // Detect Stripe success redirect (?success=true) → go to Orders page with banner
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('success') === 'true') {
+      setShowOrderSuccess(true);
+      setPage('orders');
+      params.delete('success');
+      const newSearch = params.toString();
+      const newUrl = window.location.pathname + (newSearch ? `?${newSearch}` : '') + window.location.hash;
+      window.history.replaceState({}, '', newUrl);
+    }
+  }, []);
 
   // Auth Listener
   useEffect(() => {
@@ -1071,6 +1321,19 @@ export default function App() {
               exit={{ opacity: 0 }}
             >
               <GalleryPage onRemix={handleRemix} />
+            </motion.div>
+          ) : page === 'orders' && user ? (
+            <motion.div
+              key="orders"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+            >
+              <MyOrdersPage
+                user={user}
+                showSuccessBanner={showOrderSuccess}
+                onDismissBanner={() => setShowOrderSuccess(false)}
+              />
             </motion.div>
           ) : user ? (
             <motion.div 
