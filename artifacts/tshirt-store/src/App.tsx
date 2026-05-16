@@ -62,6 +62,9 @@ import AdminPage from './AdminPage.tsx';
 import { generateDesignPrompt, generateDesignImage, refineDesignImage } from './services/geminiService.ts';
 import { removeWhiteBackground } from './services/imageUtils.ts';
 import { ProcessedPreviewImage } from './components/ProcessedPreviewImage.tsx';
+import CookieConsent from './components/CookieConsent.tsx';
+import PrivacyPage from './components/PrivacyPage.tsx';
+import { bootstrapAnalyticsFromConsent } from './services/analyticsConsent.ts';
 import stylesData from '../styles.json';
 
 // --- INITIALIZE FIREBASE ---
@@ -1229,6 +1232,11 @@ export default function App() {
   const [remixDesign, setRemixDesign] = useState<Design | null>(null);
   const [remixSource, setRemixSource] = useState<{ orderId: string; ownerUid: string } | null>(null);
 
+  // Bootstrap Firebase Analytics only if user has given consent
+  useEffect(() => {
+    bootstrapAnalyticsFromConsent();
+  }, []);
+
   // Detect Stripe success redirect (?success=true) → go to Orders page with banner
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -1491,6 +1499,15 @@ export default function App() {
             >
               <AdminPage userUid={user.uid} />
             </motion.div>
+          ) : page === 'privacy' ? (
+            <motion.div
+              key="privacy"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+            >
+              <PrivacyPage onBack={() => setPage('workshop')} />
+            </motion.div>
           ) : user ? (
             <motion.div 
               key="dashboard"                
@@ -1523,14 +1540,27 @@ export default function App() {
               <p className="text-2xl font-bold text-primary">AI T-Studio</p>
               <p className="text-[10px] uppercase font-black text-gray-400 mt-2 tracking-[0.4em]">Handcrafted Intelligence</p>
            </div>
-           <nav className="flex gap-8 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+           <nav className="flex flex-wrap justify-center gap-8 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
               <a href="#" className="hover:text-primary transition-colors">Sobre</a>
               <a href="#" className="hover:text-primary transition-colors">Termos</a>
               <a href="#" className="hover:text-primary transition-colors">Segurança</a>
-              <a href="#" className="hover:text-primary transition-colors">Shopify Partner</a>
+              <button
+                onClick={() => setPage('privacy')}
+                className="hover:text-primary transition-colors"
+              >
+                Privacidade
+              </button>
+              <button
+                onClick={() => { localStorage.removeItem('cookie_consent'); window.location.reload(); }}
+                className="hover:text-primary transition-colors"
+              >
+                Preferências de cookies
+              </button>
            </nav>
         </div>
       </footer>
+
+      <CookieConsent />
 
       <CheckoutSidebar 
         isOpen={isCheckoutOpen} 

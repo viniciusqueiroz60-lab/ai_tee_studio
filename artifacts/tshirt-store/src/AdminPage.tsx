@@ -5,8 +5,13 @@ import {
   LayoutGrid, List, Search, Filter
 } from 'lucide-react';
 import { getAuth } from 'firebase/auth';
+import { getApps, initializeApp } from 'firebase/app';
+import firebaseConfig from '../firebase-applet-config.json';
 
-const auth = getAuth();
+function getFirebaseAuth() {
+  const app = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
+  return getAuth(app);
+}
 
 interface AdminOrder {
   id: string;
@@ -41,7 +46,7 @@ const KANBAN_COLUMNS: { key: string; label: string; color: string; bg: string; b
 const STATUS_MAP = Object.fromEntries(KANBAN_COLUMNS.map(c => [c.key, c]));
 
 async function getAdminToken(): Promise<string | null> {
-  const user = auth.currentUser;
+  const user = getFirebaseAuth().currentUser;
   if (!user) return null;
   return user.getIdToken();
 }
