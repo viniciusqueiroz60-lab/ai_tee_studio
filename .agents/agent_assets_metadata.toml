@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "HqbDyMn5QZc-S2CmTPvte"
+uri = "file://docs/admin-hub.md"
+type = "text"
+title = "Admin Hub — Documentação Completa"
