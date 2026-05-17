@@ -166,8 +166,21 @@ router.post("/checkout/create-session", ipRateLimit, async (req, res): Promise<v
 
     const bucket = getFirebaseStorageBucket();
     const tempImagePath = `pendingArtwork/${pendingOrderId}.png`;
-    const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
-    await bucket.file(tempImagePath).save(Buffer.from(base64Data, "base64"), {
+
+    // Accept either a data URL / raw base64 string OR an HTTPS URL (e.g. Firebase Storage).
+    // When an HTTPS URL is received we download the image server-side so the
+    // browser never needs to re-fetch it (avoids CORS issues with Storage URLs).
+    let imageBuffer: Buffer;
+    if (typeof imageBase64 === "string" && (imageBase64.startsWith("https://") || imageBase64.startsWith("http://"))) {
+      const imgRes = await fetch(imageBase64);
+      if (!imgRes.ok) throw new Error(`Failed to download image from URL: ${imgRes.status}`);
+      imageBuffer = Buffer.from(await imgRes.arrayBuffer());
+    } else {
+      const base64Data = (imageBase64 as string).replace(/^data:image\/\w+;base64,/, "");
+      imageBuffer = Buffer.from(base64Data, "base64");
+    }
+
+    await bucket.file(tempImagePath).save(imageBuffer, {
       metadata: { contentType: "image/png" },
       public: false,
     });
