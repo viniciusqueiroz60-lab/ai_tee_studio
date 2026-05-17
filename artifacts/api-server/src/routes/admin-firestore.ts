@@ -1,51 +1,9 @@
-import { Router, type IRouter, type Request, type Response, type NextFunction } from "express";
-import { getFirebaseFirestore, verifyFirebaseToken } from "../lib/firebase-admin";
+import { Router, type IRouter } from "express";
+import { getFirebaseFirestore } from "../lib/firebase-admin";
 import { logger } from "../lib/logger";
+import { requireStoreAccess, requireFirebaseAdmin, type StoreAccessRequest } from "../lib/store-access";
 
 const router: IRouter = Router();
-
-async function requireFirebaseAdmin(req: Request, res: Response, next: NextFunction): Promise<void> {
-  const authHeader = req.headers.authorization;
-  if (!authHeader?.startsWith("Bearer ")) {
-    res.status(401).json({ error: "Authentication required" });
-    return;
-  }
-
-  let uid: string;
-  try {
-    const decoded = await verifyFirebaseToken(authHeader.slice(7));
-    uid = decoded.uid;
-  } catch {
-    res.status(401).json({ error: "Invalid token" });
-    return;
-  }
-
-  // Check ADMIN_UIDS env var (comma-separated list)
-  const adminUids = (process.env.ADMIN_UIDS ?? "")
-    .split(",")
-    .map(s => s.trim())
-    .filter(Boolean);
-  if (adminUids.includes(uid)) {
-    (req as Request & { adminUid: string }).adminUid = uid;
-    next();
-    return;
-  }
-
-  // Fallback: check Firestore `admins/{uid}` collection
-  try {
-    const db = getFirebaseFirestore();
-    const doc = await db.collection("admins").doc(uid).get();
-    if (doc.exists) {
-      (req as Request & { adminUid: string }).adminUid = uid;
-      next();
-      return;
-    }
-  } catch (err) {
-    logger.error({ err, uid }, "Failed to check admin status in Firestore");
-  }
-
-  res.status(403).json({ error: "Admin access required" });
-}
 
 const VALID_STATUSES = [
   "processing",
@@ -56,18 +14,23 @@ const VALID_STATUSES = [
   "erro_processamento",
 ];
 
-// GET all orders (optional ?status= and ?storeId= filters)
-router.get("/admin/forders", requireFirebaseAdmin, async (req, res): Promise<void> => {
+// GET all orders (super-admin: all; store owner: own store only)
+router.get("/admin/forders", requireStoreAccess, async (req, res): Promise<void> => {
+  const r = req as StoreAccessRequest;
   const status = req.query.status as string | undefined;
-  const storeId = req.query.storeId as string | undefined;
+  // Super-admins may filter by storeId; owners always see only their store
+  const storeIdFilter = r.isSuperAdmin
+    ? (req.query.storeId as string | undefined)
+    : r.ownerStoreId ?? undefined;
+
   try {
     const db = getFirebaseFirestore();
     let ref: FirebaseFirestore.Query = db.collection("orders").limit(200);
     if (status && status !== "all") {
       ref = ref.where("status", "==", status);
     }
-    if (storeId && storeId !== "all") {
-      ref = ref.where("storeId", "==", storeId);
+    if (storeIdFilter && storeIdFilter !== "all") {
+      ref = ref.where("storeId", "==", storeIdFilter);
     }
     const snap = await ref.get();
     const orders = snap.docs
@@ -89,6 +52,7 @@ router.get("/admin/forders", requireFirebaseAdmin, async (req, res): Promise<voi
           artworkUrl: data.artworkUrl ?? null,
           artworkFilename: data.artworkFilename ?? null,
           upscaled: data.upscaled ?? false,
+          aiSkipped: data.aiSkipped ?? false,
           storeId: data.storeId ?? null,
           createdAt: data.createdAt ?? null,
           completedAt: data.completedAt ?? null,
@@ -107,16 +71,34 @@ router.get("/admin/forders", requireFirebaseAdmin, async (req, res): Promise<voi
   }
 });
 
-// PATCH order status
-router.patch("/admin/forders/:id/status", requireFirebaseAdmin, async (req, res): Promise<void> => {
+// PATCH order status (super-admin: any order; store owner: own store orders only)
+router.patch("/admin/forders/:id/status", requireStoreAccess, async (req, res): Promise<void> => {
+  const r = req as StoreAccessRequest;
   const id = String(req.params.id);
   const { status } = req.body as { status: string };
+
   if (!VALID_STATUSES.includes(status)) {
     res.status(400).json({ error: "Invalid status" });
     return;
   }
+
   try {
     const db = getFirebaseFirestore();
+
+    // Store owners may only update orders that belong to their store
+    if (!r.isSuperAdmin) {
+      const orderSnap = await db.collection("orders").doc(id).get();
+      if (!orderSnap.exists) {
+        res.status(404).json({ error: "Order not found" });
+        return;
+      }
+      const orderData = orderSnap.data()!;
+      if (orderData.storeId !== r.ownerStoreId) {
+        res.status(403).json({ error: "Access denied" });
+        return;
+      }
+    }
+
     await db
       .collection("orders")
       .doc(id)
@@ -128,7 +110,7 @@ router.patch("/admin/forders/:id/status", requireFirebaseAdmin, async (req, res)
   }
 });
 
-// GET Replicate account info + recent predictions
+// GET Replicate account info + recent predictions (super-admin only)
 router.get("/admin/replicate/account", requireFirebaseAdmin, async (_req, res): Promise<void> => {
   const token = process.env.REPLICATE_API_TOKEN;
   if (!token) {

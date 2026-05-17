@@ -1,6 +1,7 @@
-import { Router, type IRouter, type Request, type Response, type NextFunction } from "express";
-import { getFirebaseFirestore, verifyFirebaseToken } from "../lib/firebase-admin";
+import { Router, type IRouter } from "express";
+import { getFirebaseFirestore } from "../lib/firebase-admin";
 import { logger } from "../lib/logger";
+import { requireFirebaseAdmin, requireStoreAccess, type StoreAccessRequest } from "../lib/store-access";
 import crypto from "crypto";
 
 const router: IRouter = Router();
@@ -15,48 +16,6 @@ function generateApiKey(): string {
   return `sk_${crypto.randomBytes(32).toString("hex")}`;
 }
 
-async function requireFirebaseAdmin(req: Request, res: Response, next: NextFunction): Promise<void> {
-  const authHeader = req.headers.authorization;
-  if (!authHeader?.startsWith("Bearer ")) {
-    res.status(401).json({ error: "Authentication required" });
-    return;
-  }
-
-  let uid: string;
-  try {
-    const decoded = await verifyFirebaseToken(authHeader.slice(7));
-    uid = decoded.uid;
-  } catch {
-    res.status(401).json({ error: "Invalid token" });
-    return;
-  }
-
-  const adminUids = (process.env.ADMIN_UIDS ?? "")
-    .split(",")
-    .map(s => s.trim())
-    .filter(Boolean);
-  if (adminUids.includes(uid)) {
-    (req as Request & { adminUid: string }).adminUid = uid;
-    next();
-    return;
-  }
-
-  try {
-    const db = getFirebaseFirestore();
-    const doc = await db.collection("admins").doc(uid).get();
-    if (doc.exists) {
-      (req as Request & { adminUid: string }).adminUid = uid;
-      next();
-      return;
-    }
-  } catch (err) {
-    logger.error({ err, uid }, "Failed to check admin status in Firestore");
-  }
-
-  res.status(403).json({ error: "Admin access required" });
-}
-
-// Seed the tshirt-store document if it doesn't exist
 async function seedDefaultStore(): Promise<void> {
   try {
     const db = getFirebaseFirestore();
@@ -68,10 +27,18 @@ async function seedDefaultStore(): Promise<void> {
         platform: "custom",
         apiKey: generateApiKey(),
         active: true,
+        isAiEnabled: true,
         webhookUrl: null,
         createdAt: new Date().toISOString(),
       });
       logger.info("Seeded default tshirt-store document in Firestore");
+    } else {
+      // Backfill isAiEnabled if missing (existing installs)
+      const data = snap.data()!;
+      if (data.isAiEnabled === undefined) {
+        await ref.update({ isAiEnabled: true });
+        logger.info("Backfilled isAiEnabled=true on tshirt-store");
+      }
     }
   } catch (err) {
     logger.warn({ err }, "Failed to seed default store");
@@ -80,25 +47,34 @@ async function seedDefaultStore(): Promise<void> {
 
 seedDefaultStore();
 
-// GET /admin/stores — list all stores
-router.get("/admin/stores", requireFirebaseAdmin, async (_req, res): Promise<void> => {
+// GET /admin/stores — list stores (super-admin: all; store owner: own store only)
+router.get("/admin/stores", requireStoreAccess, async (req, res): Promise<void> => {
+  const r = req as StoreAccessRequest;
   try {
     const db = getFirebaseFirestore();
-    const snap = await db.collection("stores").orderBy("createdAt", "asc").get();
-    const stores = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    res.json({ stores });
+    if (r.isSuperAdmin) {
+      const snap = await db.collection("stores").orderBy("createdAt", "asc").get();
+      const stores = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      res.json({ stores });
+    } else {
+      const storeId = r.ownerStoreId!;
+      const snap = await db.collection("stores").doc(storeId).get();
+      const stores = snap.exists ? [{ id: storeId, ...snap.data() }] : [];
+      res.json({ stores });
+    }
   } catch (err) {
     logger.error({ err }, "Failed to list stores");
     res.status(500).json({ error: "Failed to load stores" });
   }
 });
 
-// POST /admin/stores — create a store
+// POST /admin/stores — create a store (super-admin only)
 router.post("/admin/stores", requireFirebaseAdmin, async (req, res): Promise<void> => {
-  const { name, platform, webhookUrl } = req.body as {
+  const { name, platform, webhookUrl, ownerUid } = req.body as {
     name: string;
     platform: string;
     webhookUrl?: string;
+    ownerUid?: string;
   };
   if (!name || !platform) {
     res.status(400).json({ error: "name and platform are required" });
@@ -115,7 +91,9 @@ router.post("/admin/stores", requireFirebaseAdmin, async (req, res): Promise<voi
       platform,
       apiKey: generateApiKey(),
       active: true,
+      isAiEnabled: false,
       webhookUrl: webhookUrl ?? null,
+      ownerUid: ownerUid ?? null,
       createdAt: new Date().toISOString(),
     });
     const snap = await ref.get();
@@ -126,19 +104,23 @@ router.post("/admin/stores", requireFirebaseAdmin, async (req, res): Promise<voi
   }
 });
 
-// PATCH /admin/stores/:storeId — update active/webhookUrl/name/platform
+// PATCH /admin/stores/:storeId — update fields (super-admin only)
 router.patch("/admin/stores/:storeId", requireFirebaseAdmin, async (req, res): Promise<void> => {
   const storeId = String(req.params.storeId);
-  const { active, webhookUrl, name, platform } = req.body as {
+  const { active, webhookUrl, name, platform, isAiEnabled, ownerUid } = req.body as {
     active?: boolean;
     webhookUrl?: string;
     name?: string;
     platform?: string;
+    isAiEnabled?: boolean;
+    ownerUid?: string;
   };
   const update: Record<string, unknown> = {};
   if (typeof active === "boolean") update.active = active;
   if (webhookUrl !== undefined) update.webhookUrl = webhookUrl;
   if (name !== undefined) update.name = name;
+  if (ownerUid !== undefined) update.ownerUid = ownerUid;
+  if (typeof isAiEnabled === "boolean") update.isAiEnabled = isAiEnabled;
   if (platform !== undefined) {
     if (!isValidPlatform(platform)) {
       res.status(400).json({ error: `platform must be one of: ${VALID_PLATFORMS.join(", ")}` });
@@ -157,7 +139,7 @@ router.patch("/admin/stores/:storeId", requireFirebaseAdmin, async (req, res): P
   }
 });
 
-// POST /admin/stores/:storeId/rotate-key — generate a new API key
+// POST /admin/stores/:storeId/rotate-key — generate a new API key (super-admin only)
 router.post("/admin/stores/:storeId/rotate-key", requireFirebaseAdmin, async (req, res): Promise<void> => {
   const storeId = String(req.params.storeId);
   const newKey = generateApiKey();
@@ -171,7 +153,7 @@ router.post("/admin/stores/:storeId/rotate-key", requireFirebaseAdmin, async (re
   }
 });
 
-// DELETE /admin/stores/:storeId — deactivate a store (soft-delete, keeps the document)
+// DELETE /admin/stores/:storeId — soft-delete (super-admin only)
 router.delete("/admin/stores/:storeId", requireFirebaseAdmin, async (req, res): Promise<void> => {
   const storeId = String(req.params.storeId);
   if (storeId === "tshirt-store") {
@@ -218,7 +200,9 @@ router.post("/ingest/:storeId/orders", async (req, res): Promise<void> => {
       return;
     }
 
+    const isAiEnabled = store.isAiEnabled === true;
     const body = req.body as Record<string, unknown>;
+
     const orderRef = await db.collection("orders").add({
       storeId,
       storeName: store.name,
@@ -236,7 +220,9 @@ router.post("/ingest/:storeId/orders", async (req, res): Promise<void> => {
       artworkFilename: body.artworkFilename ?? body.artwork_filename ?? null,
       upscaled: false,
       shareInGallery: false,
-      status: "aguardando_producao",
+      // Non-AI stores skip AI processing entirely
+      status: isAiEnabled ? "processing" : "aguardando_producao",
+      aiSkipped: !isAiEnabled,
       createdAt: new Date().toISOString(),
       ingestedAt: new Date().toISOString(),
     });
