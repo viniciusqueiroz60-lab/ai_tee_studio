@@ -58,7 +58,6 @@ import firebaseConfig from '../firebase-applet-config.json';
 
 // Local
 import { Page, UserProfile, Design, GalleryOrder, Foundation, ColorOption } from './types.ts';
-import AdminPage from './AdminPage.tsx';
 import { generateDesignPrompt, generateDesignImage, refineDesignImage } from './services/geminiService.ts';
 import { removeWhiteBackground } from './services/imageUtils.ts';
 import { ProcessedPreviewImage } from './components/ProcessedPreviewImage.tsx';
@@ -148,14 +147,6 @@ const Header = ({ page, setPage, user, onLogin, onLogout }: {
               className={`text-sm font-bold transition-all ${page === 'orders' ? 'text-primary border-b-2 border-primary pb-1' : 'text-gray-500 hover:text-primary'}`}
             >
               Meus Pedidos
-            </button>
-          )}
-          {user && (
-            <button
-              onClick={() => setPage('admin')}
-              className={`text-sm font-bold transition-all ${page === 'admin' ? 'text-primary border-b-2 border-primary pb-1' : 'text-gray-500 hover:text-primary'}`}
-            >
-              Admin
             </button>
           )}
         </nav>
@@ -1489,15 +1480,6 @@ export default function App() {
                 showSuccessBanner={showOrderSuccess}
                 onDismissBanner={() => setShowOrderSuccess(false)}
               />
-            </motion.div>
-          ) : page === 'admin' && user ? (
-            <motion.div
-              key="admin"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-            >
-              <AdminPage userUid={user.uid} />
             </motion.div>
           ) : page === 'privacy' ? (
             <motion.div

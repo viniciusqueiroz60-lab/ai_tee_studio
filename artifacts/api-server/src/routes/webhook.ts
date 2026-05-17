@@ -84,6 +84,7 @@ async function processCompletedOrder(session: Stripe.Checkout.Session): Promise<
   const customerEmail = pendingEmail ?? session.customer_details?.email ?? "unknown";
 
   const orderRef = await db.collection("orders").add({
+    storeId: "tshirt-store",
     sessionId,
     uid: uid ?? null,
     customerEmail,

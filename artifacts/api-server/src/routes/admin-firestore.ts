@@ -56,14 +56,18 @@ const VALID_STATUSES = [
   "erro_processamento",
 ];
 
-// GET all orders (optional ?status= filter)
+// GET all orders (optional ?status= and ?storeId= filters)
 router.get("/admin/forders", requireFirebaseAdmin, async (req, res): Promise<void> => {
   const status = req.query.status as string | undefined;
+  const storeId = req.query.storeId as string | undefined;
   try {
     const db = getFirebaseFirestore();
     let ref: FirebaseFirestore.Query = db.collection("orders").limit(200);
     if (status && status !== "all") {
       ref = ref.where("status", "==", status);
+    }
+    if (storeId && storeId !== "all") {
+      ref = ref.where("storeId", "==", storeId);
     }
     const snap = await ref.get();
     const orders = snap.docs
@@ -85,6 +89,7 @@ router.get("/admin/forders", requireFirebaseAdmin, async (req, res): Promise<voi
           artworkUrl: data.artworkUrl ?? null,
           artworkFilename: data.artworkFilename ?? null,
           upscaled: data.upscaled ?? false,
+          storeId: data.storeId ?? null,
           createdAt: data.createdAt ?? null,
           completedAt: data.completedAt ?? null,
           errorAt: data.errorAt ?? null,

@@ -13,6 +13,7 @@ import aiStudioRouter from "./ai-studio";
 import webhookRouter from "./webhook";
 import myOrdersRouter from "./my-orders";
 import adminFirestoreRouter from "./admin-firestore";
+import storesRouter from "./stores";
 
 const router: IRouter = Router();
 
@@ -28,6 +29,7 @@ router.use(tshirtModelsRouter);
 router.use(ordersRouter);
 router.use(myOrdersRouter);
 router.use(adminFirestoreRouter);
+router.use(storesRouter);
 router.use(adminRouter);
 router.use(aiStudioRouter);
 
