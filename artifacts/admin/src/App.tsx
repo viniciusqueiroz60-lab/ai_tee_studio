@@ -71,6 +71,9 @@ interface AdminOrder {
   artworkFilename: string | null;
   upscaled: boolean;
   aiSkipped: boolean;
+  productionCost: number | null;
+  geminiCost: number | null;
+  replicateCost: number | null;
   storeId: string | null;
   createdAt: string | null;
   completedAt: string | null;
@@ -337,8 +340,17 @@ function FinanceiroPanel({ orders, storeMap }: { orders: AdminOrder[]; storeMap:
   const rows = orders.map(o => {
     const store = storeMap.get(o.storeId ?? '');
     const isAi = store ? store.isAiEnabled : !o.aiSkipped;
-    const prodCost = getProductionCost(o.size) * (o.quantity || 1);
-    const apiCost = isAi ? AI_API_COST_BRL : 0;
+    // Use order-level stored cost if available, otherwise fall back to size defaults
+    const prodCost = o.productionCost != null
+      ? o.productionCost
+      : getProductionCost(o.size) * (o.quantity || 1);
+    // Use real API cost breakdown (geminiCost + replicateCost) if recorded on the order,
+    // otherwise fall back to the AI flat-rate constant (or 0 for non-AI stores)
+    const apiCost = !isAi
+      ? 0
+      : (o.geminiCost != null || o.replicateCost != null)
+        ? (o.geminiCost ?? 0) + (o.replicateCost ?? 0)
+        : AI_API_COST_BRL;
     const totalCogs = prodCost + apiCost;
     const revenue = (o.amount ?? 0) / 100;
     const margin = revenue - totalCogs;

@@ -52,14 +52,19 @@ router.get("/admin/stores", requireStoreAccess, async (req, res): Promise<void> 
   const r = req as StoreAccessRequest;
   try {
     const db = getFirebaseFirestore();
+    const normalizeStore = (id: string, data: FirebaseFirestore.DocumentData) => ({
+      id,
+      ...data,
+      isAiEnabled: data.isAiEnabled ?? false,
+    });
     if (r.isSuperAdmin) {
       const snap = await db.collection("stores").orderBy("createdAt", "asc").get();
-      const stores = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const stores = snap.docs.map(d => normalizeStore(d.id, d.data()));
       res.json({ stores });
     } else {
       const storeId = r.ownerStoreId!;
       const snap = await db.collection("stores").doc(storeId).get();
-      const stores = snap.exists ? [{ id: storeId, ...snap.data() }] : [];
+      const stores = snap.exists ? [normalizeStore(storeId, snap.data()!)] : [];
       res.json({ stores });
     }
   } catch (err) {
@@ -70,11 +75,12 @@ router.get("/admin/stores", requireStoreAccess, async (req, res): Promise<void> 
 
 // POST /admin/stores — create a store (super-admin only)
 router.post("/admin/stores", requireFirebaseAdmin, async (req, res): Promise<void> => {
-  const { name, platform, webhookUrl, ownerUid } = req.body as {
+  const { name, platform, webhookUrl, ownerUid, isAiEnabled } = req.body as {
     name: string;
     platform: string;
     webhookUrl?: string;
     ownerUid?: string;
+    isAiEnabled?: boolean;
   };
   if (!name || !platform) {
     res.status(400).json({ error: "name and platform are required" });
@@ -91,7 +97,7 @@ router.post("/admin/stores", requireFirebaseAdmin, async (req, res): Promise<voi
       platform,
       apiKey: generateApiKey(),
       active: true,
-      isAiEnabled: false,
+      isAiEnabled: typeof isAiEnabled === "boolean" ? isAiEnabled : false,
       webhookUrl: webhookUrl ?? null,
       ownerUid: ownerUid ?? null,
       createdAt: new Date().toISOString(),
