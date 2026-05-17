@@ -109,7 +109,7 @@ router.get("/admin/forders", requireFirebaseAdmin, async (req, res): Promise<voi
 
 // PATCH order status
 router.patch("/admin/forders/:id/status", requireFirebaseAdmin, async (req, res): Promise<void> => {
-  const { id } = req.params;
+  const id = String(req.params.id);
   const { status } = req.body as { status: string };
   if (!VALID_STATUSES.includes(status)) {
     res.status(400).json({ error: "Invalid status" });
@@ -145,7 +145,7 @@ router.get("/admin/replicate/account", requireFirebaseAdmin, async (_req, res): 
       }),
     ]);
     const account = await accountRes.json();
-    const predictionsData = await predictionsRes.json();
+    const predictionsData = await predictionsRes.json() as { results?: unknown[] };
     res.json({ account, predictions: predictionsData.results ?? [] });
   } catch (err) {
     logger.error({ err }, "Failed to fetch Replicate data");

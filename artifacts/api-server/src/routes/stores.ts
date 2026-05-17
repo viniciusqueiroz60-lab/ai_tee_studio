@@ -118,7 +118,7 @@ router.post("/admin/stores", requireFirebaseAdmin, async (req, res): Promise<voi
 
 // PATCH /admin/stores/:storeId — update active/webhookUrl/name/platform
 router.patch("/admin/stores/:storeId", requireFirebaseAdmin, async (req, res): Promise<void> => {
-  const { storeId } = req.params;
+  const storeId = String(req.params.storeId);
   const { active, webhookUrl, name, platform } = req.body as {
     active?: boolean;
     webhookUrl?: string;
@@ -143,7 +143,7 @@ router.patch("/admin/stores/:storeId", requireFirebaseAdmin, async (req, res): P
 
 // POST /admin/stores/:storeId/rotate-key — generate a new API key
 router.post("/admin/stores/:storeId/rotate-key", requireFirebaseAdmin, async (req, res): Promise<void> => {
-  const { storeId } = req.params;
+  const storeId = String(req.params.storeId);
   const newKey = generateApiKey();
   try {
     const db = getFirebaseFirestore();
@@ -157,7 +157,7 @@ router.post("/admin/stores/:storeId/rotate-key", requireFirebaseAdmin, async (re
 
 // DELETE /admin/stores/:storeId — deactivate a store (soft-delete, keeps the document)
 router.delete("/admin/stores/:storeId", requireFirebaseAdmin, async (req, res): Promise<void> => {
-  const { storeId } = req.params;
+  const storeId = String(req.params.storeId);
   if (storeId === "tshirt-store") {
     res.status(400).json({ error: "Cannot deactivate the default store" });
     return;
