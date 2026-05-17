@@ -5,6 +5,12 @@ import crypto from "crypto";
 
 const router: IRouter = Router();
 
+const VALID_PLATFORMS = ["custom", "shopify", "woocommerce", "nuvemshop"] as const;
+
+function isValidPlatform(p: unknown): p is string {
+  return typeof p === "string" && (VALID_PLATFORMS as readonly string[]).includes(p);
+}
+
 function generateApiKey(): string {
   return `sk_${crypto.randomBytes(32).toString("hex")}`;
 }
@@ -98,6 +104,10 @@ router.post("/admin/stores", requireFirebaseAdmin, async (req, res): Promise<voi
     res.status(400).json({ error: "name and platform are required" });
     return;
   }
+  if (!isValidPlatform(platform)) {
+    res.status(400).json({ error: `platform must be one of: ${VALID_PLATFORMS.join(", ")}` });
+    return;
+  }
   try {
     const db = getFirebaseFirestore();
     const ref = await db.collection("stores").add({
@@ -129,7 +139,13 @@ router.patch("/admin/stores/:storeId", requireFirebaseAdmin, async (req, res): P
   if (typeof active === "boolean") update.active = active;
   if (webhookUrl !== undefined) update.webhookUrl = webhookUrl;
   if (name !== undefined) update.name = name;
-  if (platform !== undefined) update.platform = platform;
+  if (platform !== undefined) {
+    if (!isValidPlatform(platform)) {
+      res.status(400).json({ error: `platform must be one of: ${VALID_PLATFORMS.join(", ")}` });
+      return;
+    }
+    update.platform = platform;
+  }
   try {
     const db = getFirebaseFirestore();
     await db.collection("stores").doc(storeId).update(update);
