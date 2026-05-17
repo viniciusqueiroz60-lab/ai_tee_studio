@@ -12,8 +12,7 @@ import firebaseConfig from '../firebase-applet-config.json';
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
-const api = (path: string) => `${BASE}/api${path}`;
+const api = (path: string) => `/api${path}`;
 
 async function getToken(): Promise<string | null> {
   const user = auth.currentUser;
@@ -364,14 +363,14 @@ function LojasPanel() {
   };
 
   const deleteStore = async (storeId: string) => {
-    if (!confirm('Deletar esta loja? Esta ação não pode ser desfeita.')) return;
+    if (!confirm('Desativar esta loja? Ela ficará inativa e seus dados serão preservados.')) return;
     const token = await getToken();
     if (!token) return;
     await fetch(api(`/admin/stores/${storeId}`), {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` },
     });
-    setStores(prev => prev.filter(s => s.id !== storeId));
+    setStores(prev => prev.map(s => s.id === storeId ? { ...s, active: false } : s));
   };
 
   const createStore = async () => {
@@ -398,7 +397,7 @@ function LojasPanel() {
 
   const ingestUrl = (storeId: string) => {
     const origin = window.location.origin;
-    return `${origin}${BASE}/api/ingest/${storeId}/orders`;
+    return `${origin}/api/ingest/${storeId}/orders`;
   };
 
   if (loading) return <div className="flex justify-center py-20"><RefreshCw className="w-8 h-8 text-primary animate-spin" /></div>;
@@ -577,6 +576,21 @@ function AdminPanel({ user }: { user: User }) {
   const [search, setSearch] = useState('');
   const [storeFilter, setStoreFilter] = useState<string>('all');
   const [dragOverCol, setDragOverCol] = useState<string | null>(null);
+  const [allStores, setAllStores] = useState<StoreDoc[]>([]);
+
+  useEffect(() => {
+    (async () => {
+      const token = await getToken();
+      if (!token) return;
+      try {
+        const res = await fetch(api('/admin/stores'), { headers: { Authorization: `Bearer ${token}` } });
+        if (res.ok) {
+          const data = await res.json();
+          setAllStores(data.stores ?? []);
+        }
+      } catch { /* non-fatal — selector will be hidden */ }
+    })();
+  }, []);
 
   const loadOrders = useCallback(async () => {
     setLoading(true);
@@ -638,7 +652,6 @@ function AdminPanel({ user }: { user: User }) {
     );
   }
 
-  const storeIds = Array.from(new Set(orders.map(o => o.storeId).filter(Boolean) as string[]));
 
   const filteredOrders = orders.filter(o => {
     if (!search) return true;
@@ -743,14 +756,14 @@ function AdminPanel({ user }: { user: User }) {
               className="flex-1 min-w-[120px] text-sm outline-none placeholder:text-gray-300"
             />
             {search && <button onClick={() => setSearch('')}><X className="w-4 h-4 text-gray-400" /></button>}
-            {storeIds.length > 1 && (
+            {allStores.length > 0 && (
               <select
                 value={storeFilter}
                 onChange={e => setStoreFilter(e.target.value)}
                 className="text-xs border border-outline-subtle rounded-lg px-2 py-1 bg-white focus:outline-none"
               >
                 <option value="all">Todas as lojas</option>
-                {storeIds.map(sid => <option key={sid} value={sid}>{sid}</option>)}
+                {allStores.map(s => <option key={s.id} value={s.id}>{s.name} ({s.id})</option>)}
               </select>
             )}
             <span className="text-xs text-gray-400 font-bold">{filteredOrders.length} pedidos</span>

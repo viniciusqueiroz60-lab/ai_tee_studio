@@ -59,7 +59,7 @@ async function seedDefaultStore(): Promise<void> {
     if (!snap.exists) {
       await ref.set({
         name: "AI T-Studio",
-        platform: "internal",
+        platform: "custom",
         apiKey: generateApiKey(),
         active: true,
         webhookUrl: null,
@@ -155,20 +155,23 @@ router.post("/admin/stores/:storeId/rotate-key", requireFirebaseAdmin, async (re
   }
 });
 
-// DELETE /admin/stores/:storeId — delete a store (not the default one)
+// DELETE /admin/stores/:storeId — deactivate a store (soft-delete, keeps the document)
 router.delete("/admin/stores/:storeId", requireFirebaseAdmin, async (req, res): Promise<void> => {
   const { storeId } = req.params;
   if (storeId === "tshirt-store") {
-    res.status(400).json({ error: "Cannot delete the default store" });
+    res.status(400).json({ error: "Cannot deactivate the default store" });
     return;
   }
   try {
     const db = getFirebaseFirestore();
-    await db.collection("stores").doc(storeId).delete();
-    res.status(204).send();
+    await db.collection("stores").doc(storeId).update({
+      active: false,
+      deactivatedAt: new Date().toISOString(),
+    });
+    res.status(200).json({ id: storeId, active: false });
   } catch (err) {
-    logger.error({ err, storeId }, "Failed to delete store");
-    res.status(500).json({ error: "Failed to delete store" });
+    logger.error({ err, storeId }, "Failed to deactivate store");
+    res.status(500).json({ error: "Failed to deactivate store" });
   }
 });
 
@@ -222,7 +225,7 @@ router.post("/ingest/:storeId/orders", async (req, res): Promise<void> => {
       ingestedAt: new Date().toISOString(),
     });
 
-    res.status(201).json({ id: orderRef.id, storeId, status: "aguardando_producao" });
+    res.status(201).json({ orderId: orderRef.id });
   } catch (err) {
     logger.error({ err, storeId }, "Failed to ingest order");
     res.status(500).json({ error: "Failed to ingest order" });
