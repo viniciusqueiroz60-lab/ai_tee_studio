@@ -3,7 +3,7 @@ import Stripe from "stripe";
 import { FieldValue } from "firebase-admin/firestore";
 import { logger } from "../lib/logger";
 import { getFirebaseFirestore, getFirebaseStorageBucket } from "../lib/firebase-admin";
-import { upscaleImage } from "../lib/upscale";
+import { processArtworkForDTF } from "../lib/upscale";
 
 const router = Router();
 
@@ -113,12 +113,8 @@ async function processCompletedOrder(session: Stripe.Checkout.Session): Promise<
       expires: Date.now() + 60 * 60 * 1000, // 1 hour
     });
 
-    logger.info({ sessionId }, "Starting artwork upscaling");
-    const upscaledImage = await upscaleImage(tempSignedUrl);
-
-    // For the fallback comparison below we still need the original bytes
-    const [tempImageBuffer] = await tempFile.download();
-    const imageBase64 = `data:image/png;base64,${tempImageBuffer.toString("base64")}`;
+    logger.info({ sessionId }, "Starting DTF artwork processing (upscale + background removal)");
+    const { dataUrl: finalImage, upscaled, bgRemoved } = await processArtworkForDTF(tempSignedUrl);
 
     const emailSlug = customerEmail.replace(/[@.]/g, "_").slice(0, 40);
     const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
@@ -126,7 +122,7 @@ async function processCompletedOrder(session: Stripe.Checkout.Session): Promise<
     const filename = `artes/${emailSlug}_${dateStr}_${styleSlug}.png`;
 
     const file = bucket.file(filename);
-    const base64Data = upscaledImage.replace(/^data:image\/\w+;base64,/, "");
+    const base64Data = finalImage.replace(/^data:image\/\w+;base64,/, "");
     const imageBuffer = Buffer.from(base64Data, "base64");
 
     await file.save(imageBuffer, {
@@ -143,7 +139,8 @@ async function processCompletedOrder(session: Stripe.Checkout.Session): Promise<
       status: "aguardando_producao",
       artworkUrl,
       artworkFilename: filename,
-      upscaled: imageBase64 !== upscaledImage,
+      upscaled,
+      bgRemoved,
       completedAt: new Date().toISOString(),
     });
 
